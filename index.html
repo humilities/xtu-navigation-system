@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>湘潭大学景点导航系统</title>
+  <!-- 引入Leaflet.css -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- 自定义样式 -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 顶部查询区 -->
+    <div class="search-bar">
+      <h2>湘潭大学景点导航</h2>
+      <div class="form-group">
+        <label>起点：</label>
+        <select id="start" class="select-active"></select>
+      </div>
+      <div class="form-group">
+        <label>终点：</label>
+        <select id="end" class="select-active"></select>
+      </div>
+      <div class="form-group">
+        <label>时段：</label>
+        <select id="time-period">
+          <option value="morning">早上（8:00-10:00）</option>
+          <option value="noon" selected>中午（11:30-13:30）</option>
+          <option value="evening">晚上（17:30-19:30）</option>
+          <option value="weekend">周末</option>
+        </select>
+      </div>
+      <button id="search-btn">查询最优路线</button>
+    </div>
+
+    <!-- 地图容器 -->
+    <div id="map-container"></div>
+
+    <!-- 路径详情 -->
+    <div id="path-info" class="path-info"></div>
+  </div>
+
+  <!-- 引入Leaflet.js -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- 引入算法和地图逻辑 -->
+  <script src="./js/dijkstra.js"></script>
+  <script src="./js/map.js"></script>
+</body>
+</html>
