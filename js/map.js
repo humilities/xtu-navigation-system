@@ -18,7 +18,7 @@ async function initMap() {
   });
 
   // 3. 加载校园背景图（800×600像素）
-  const imgWidth = 1200;
+  const imgWidth = 1020;
   const imgHeight = 1460;
   const bounds = [[0, 0], [imgHeight, imgWidth]]; // Leaflet坐标：[y, x]
   L.imageOverlay('./assets/xtu-map.jpg', bounds).addTo(map);
