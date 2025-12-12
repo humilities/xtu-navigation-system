@@ -2,6 +2,7 @@
 let map = null;
 let pathLayer = null; // 路线图层
 let graph = null; // 拓扑数据
+let imgHeight = 1460; // 图片高度（用于Y轴翻转）
 
 // 初始化地图
 async function initMap() {
@@ -19,7 +20,7 @@ async function initMap() {
 
   // 3. 加载校园背景图（800×600像素）
   const imgWidth = 1020;
-  const imgHeight = 1460;
+  imgHeight = 1460;
   const bounds = [[0, 0], [imgHeight, imgWidth]]; // Leaflet坐标：[y, x]
   L.imageOverlay('./assets/xtu-map.jpg', bounds).addTo(map);
   map.fitBounds(bounds);
