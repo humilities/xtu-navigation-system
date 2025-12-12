@@ -6,7 +6,7 @@ let graph = null; // 拓扑数据
 // 初始化地图
 async function initMap() {
   // 1. 加载拓扑数据
-  const res = await fetch('./json/xtu-graph.json');
+  const res = await fetch('./json/xtu_graph.json');
   graph = await res.json();
 
   // 2. 初始化Leaflet地图（适配静态图片）
@@ -18,8 +18,8 @@ async function initMap() {
   });
 
   // 3. 加载校园背景图（800×600像素）
-  const imgWidth = 800;
-  const imgHeight = 600;
+  const imgWidth = 1200;
+  const imgHeight = 1460;
   const bounds = [[0, 0], [imgHeight, imgWidth]]; // Leaflet坐标：[y, x]
   L.imageOverlay('./assets/xtu-map.jpg', bounds).addTo(map);
   map.fitBounds(bounds);
