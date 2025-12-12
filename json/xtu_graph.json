@@ -10,60 +10,78 @@
     {"id": 8, "name": "西山景区", "x": 700, "y": 430, "desc": "人文景观，人流少"},
     {"id": 9, "name": "体育馆", "x": 980, "y": 940, "desc": "赛事时段人流高"},
     {"id": 10, "name": "兴湘学院大门", "x": 400, "y": 1090, "desc": "早晚通勤人流高"},
-    {"id": 11, "name": "化工楼", "x": 210, "y": 620, "desc": "学术区，人流少"}
+    {"id": 11, "name": "化工楼", "x": 210, "y": 620, "desc": "学术区，人流少"},
+
+
+    {"id": 12, "name": "计算中心", "x": 400, "y": 920, "desc": "上课教学楼，人流多"},
+    {"id": 13, "name": "文化广场", "x": 550, "y": 920, "desc": "文化区，人流多"},
+    {"id": 14, "name": "金翰林", "x": 640, "y": 1040, "desc": "宿舍区，人流多"},
+    {"id": 15, "name": "西湖", "x": 180, "y": 510, "desc": "宿舍区，人流多"}
   ],
-  "edges": [
-    {"from": 1, "to": 3, "distance": 550, "flow": {"morning":0.1, "noon":0.2, "evening":0.3}, "weight": 0},
-    {"from": 1, "to": 5, "distance": 50, "flow": {"morning":0.2, "noon":0.3, "evening":0.4}, "weight": 0},
-    {"from": 1, "to": 13, "distance": 150, "flow": {"morning":0.1, "noon":0.2, "evening":0.3}, "weight": 0},
-    {"from": 1, "to": 12, "distance": 300, "flow": {"morning":0.1, "noon":0.2, "evening":0.3}, "weight": 0},
-    {"from": 1, "to": 10, "distance": 150, "flow": {"morning":0.1, "noon":0.2, "evening":0.3}, "weight": 0},
+ 
+"edges": [
+    {"from": 1, "to": 3, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0},
+    {"from": 1, "to": 5, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
+    {"from": 1, "to": 13, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
+    {"from": 1, "to": 12, "distance": 300, "flow": {"morning":0.1, "noon":0.1, "evening":0.3}, "weight": 0},
+    {"from": 1, "to": 10, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
 
 
-    {"from": 2, "to": 3, "distance": 50, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
-    {"from": 2, "to": 12, "distance": 100, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
-    {"from": 2, "to": 6, "distance": 800, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
-    {"from": 2, "to": 11, "distance": 600, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
+    {"from": 2, "to": 3, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0},
+    {"from": 2, "to": 12, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0},
+    {"from": 2, "to": 6, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0},
+    {"from": 2, "to": 11, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0},
 
 
-    {"from": 3, "to": 6, "distance": 800, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
-    {"from": 3, "to": 2, "distance": 50, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
-    {"from": 3, "to": 1, "distance": 550, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
-    {"from": 3, "to": 7, "distance": 200, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
-    {"from": 3, "to": 13, "distance": 400, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
+    {"from": 3, "to": 6, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0},
+    {"from": 3, "to": 2, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0}, 
+    {"from": 3, "to": 1, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0}, 
+    {"from": 3, "to": 7, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},
+    {"from": 3, "to": 13, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0},
 
-    {"from": 4, "to": 7, "distance": 400, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
-    {"from": 4, "to": 14, "distance": 50, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
-    {"from": 4, "to": 9, "distance": 250, "flow": {"morning":0.8, "noon":0.2, "evening":0.7}, "weight": 0},
+    {"from": 4, "to": 7, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
+    {"from": 4, "to": 14, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0},
+    {"from": 4, "to": 9, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0},
 
 
-    {"from": 5, "to": 1, "distance": 50, "flow": {"morning":0.3, "noon":0.4, "evening":0.5}, "weight": 0},
-    {"from": 5, "to": 10, "distance": 150, "flow": {"morning":0.3, "noon":0.4, "evening":0.5}, "weight": 0},
+    {"from": 5, "to": 1, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
+    {"from": 5, "to": 10, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0},
 
-    {"from": 6, "to": 2, "distance": 800, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 6, "to": 3, "distance": 800, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 6, "to": 15, "distance": 450, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 6, "to": 8, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+    {"from": 6, "to": 2, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0}, 
+    {"from": 6, "to": 3, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0}, 
+    {"from": 6, "to": 15, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0},
+    {"from": 6, "to": 8, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},
 
-    {"from": 7, "to": 8, "distance": 800, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 7, "to": 3, "distance": 200, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 7, "to": 13, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 7, "to": 4, "distance": 400, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+    {"from": 7, "to": 8, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0},
+    {"from": 7, "to": 3, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},  
+    {"from": 7, "to": 13, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0},
+    {"from": 7, "to": 4, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0}, 
 
-    {"from": 8, "to": 6, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 8, "to": 7, "distance": 800, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+    {"from": 8, "to": 6, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},  
+    {"from": 8, "to": 7, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0}, 
 
-    {"from": 9, "to": 4, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+    {"from": 9, "to": 4, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0}, 
 
     {"from": 10, "to": 12, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 10, "to": 1, "distance": 150, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-    {"from": 10, "to": 5, "distance": 150, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+    {"from": 10, "to": 1, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0}, 
+    {"from": 10, "to": 5, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0}, 
 
-    {"from": 11, "to": 2, "distance": 600, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+    {"from": 11, "to": 2, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0}, 
     {"from": 11, "to": 15, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
 
-    {"from": 12, "to": 2, "distance": 100, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0}
-    
+    {"from": 12, "to": 2, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0}, 
+    {"from": 12, "to": 10, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0}, 
+
+    {"from": 13, "to": 7, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0}, 
+    {"from": 13, "to": 3, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0}, 
+    {"from": 13, "to": 1, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
+    {"from": 13, "to": 14, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0},
+
+    {"from": 14, "to": 13, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0}, 
+    {"from": 14, "to": 4, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0}, 
+
+    {"from": 15, "to": 11, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},  
+    {"from": 15, "to": 6, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0}  
   ],
   "flowConfig": {
     "timePeriods": ["morning", "noon", "evening", "weekend"],
