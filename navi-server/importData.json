@@ -1,0 +1,31 @@
+const fs = require('fs');
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'postgres',
+  password: '416906',
+  port: 5432,
+});
+
+// 读取你原来的 json 文件
+const rawData = fs.readFileSync('../path/to/your/data.json'); 
+const locations = JSON.parse(rawData);
+
+async function migrate() {
+  for (let loc of locations) {
+    const query = `
+      INSERT INTO locations (name, category, longitude, latitude, height)
+      VALUES ($1, $2, $3, $4, $5)
+    `;
+    // 假设你 json 里有这些字段，如果没有，给个默认值
+    const values = [loc.name, loc.type || '未分类', loc.lng, loc.lat, loc.height || 10];
+    await pool.query(query, values);
+    console.log(`导入成功: ${loc.name}`);
+  }
+  console.log('所有数据同步完成！');
+  process.exit();
+}
+
+migrate();

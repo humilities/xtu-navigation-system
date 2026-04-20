@@ -1,0 +1,25 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+select version();
+
+-- 创建地点表
+CREATE TABLE locations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    category VARCHAR(50),
+    description TEXT,
+    longitude DECIMAL(10, 7),
+    latitude DECIMAL(10, 7),
+    -- 3D 关键字段：建筑高度
+    height DECIMAL(5, 2) DEFAULT 0.0,
+    -- 3D 关键字段：离地高度（用于天桥等）
+    min_height DECIMAL(5, 2) DEFAULT 0.0
+);
+
+-- 创建图片关联表
+CREATE TABLE location_photos (
+    id SERIAL PRIMARY KEY,
+    location_id INTEGER REFERENCES locations(id) ON DELETE CASCADE,
+    url VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE
+);
