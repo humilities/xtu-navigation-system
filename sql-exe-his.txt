@@ -23,3 +23,52 @@ CREATE TABLE location_photos (
     url VARCHAR(255) NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE
 );
+
+-- 此sql用于创建边表，我们一般都考虑双向边，我打算届时创建一个双向视图，查询时查询视图即可
+CREATE TABLE edges (
+    id SERIAL PRIMARY KEY,              
+    source_node INTEGER NOT NULL,       
+    target_node INTEGER NOT NULL,       
+    distance DECIMAL(10, 2),            
+    congestion_level DECIMAL(3, 2) DEFAULT 1.0, 
+    road_name VARCHAR(50),       
+    
+    geom GEOMETRY(LineString, 4326),
+    
+    CONSTRAINT fk_source FOREIGN KEY (source_node) REFERENCES locations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_target FOREIGN KEY (target_node) REFERENCES locations(id) ON DELETE CASCADE
+);
+
+-- 为起点和终点建立索引，提高路径查询速度
+CREATE INDEX idx_edges_source ON edges(source_node);
+CREATE INDEX idx_edges_target ON edges(target_node);
+
+-- 失物招领表
+CREATE TABLE lost_and_found (
+    id SERIAL PRIMARY KEY,
+    location_id INTEGER REFERENCES locations(id) ON DELETE CASCADE,
+    type SMALLINT NOT NULL, -- 0:丢了, 1:捡了
+    item_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    contact VARCHAR(100),
+    status SMALLINT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 地点点评表
+CREATE TABLE location_reviews (
+    id SERIAL PRIMARY KEY,
+    location_id INTEGER REFERENCES locations(id) ON DELETE CASCADE,
+    user_nickname VARCHAR(50),
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 先删除原有的静态拥挤度字段
+ALTER TABLE edges DROP COLUMN IF EXISTS congestion_level;
+
+-- 增加早、中、晚三个时间段的拥挤系数
+ALTER TABLE edges ADD COLUMN flow_morning DECIMAL(3, 2) DEFAULT 1.0;
+ALTER TABLE edges ADD COLUMN flow_noon DECIMAL(3, 2) DEFAULT 1.0;
+ALTER TABLE edges ADD COLUMN flow_evening DECIMAL(3, 2) DEFAULT 1.0;
