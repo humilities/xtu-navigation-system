@@ -1,9 +1,12 @@
-const { Pool } = require('pg');
 require('dotenv').config();
+const { Pool } = require('pg');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const app = express();
+
+// 添加这行测试代码，启动时看终端输出什么
+console.log("调试 - 密码是否读取成功:", process.env.DB_PASSWORD ? "是" : "否");
 
 // --- 中间件配置 ---
 app.use(cors()); 
@@ -14,11 +17,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // --- 数据库连接配置 ---
 // 建议：如果有了 .env 文件，可以使用 process.env.DB_PASSWORD 等替代硬编码
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'postgres', 
-  password: '416906', 
-  port: 5432,
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'postgres',
+  password: process.env.DB_PASSWORD, // 从 .env 文件读取
+  port: process.env.DB_PORT || 5432,
 });
 
 // --- 测试连接 (注意：千万不要在这里调用 pool.end()) ---
@@ -51,7 +54,7 @@ app.get('/api/locations/:id', async (req, res) => {
     const query = `
       SELECT 
         l.*,
-        -- 使用 COALESCE 处理 null，确保前端拿到的是空数组而不是 null
+        -- 使用 COALESCE 处理 null 确保前端拿到的是空数组而不是 null
         COALESCE((SELECT json_agg(p) FROM location_photos p WHERE p.location_id = l.id), '[]') as photos,
         COALESCE((SELECT json_agg(r) FROM location_reviews r WHERE r.location_id = l.id AND r.status = 1), '[]') as reviews,
         COALESCE((SELECT json_agg(lf) FROM lost_and_found lf WHERE lf.location_id = l.id AND lf.status = 1), '[]') as lost_found
