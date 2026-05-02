@@ -33,6 +33,7 @@
 ---
 
 ## 建筑点评表
+
 同样属于关联性数据。
 同样需要以location_is作为外键访问locations表。
 记录id,location_id,user_nickname,rating,comment,created_at。

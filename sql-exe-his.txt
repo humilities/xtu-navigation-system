@@ -72,3 +72,30 @@ ALTER TABLE edges DROP COLUMN IF EXISTS congestion_level;
 ALTER TABLE edges ADD COLUMN flow_morning DECIMAL(3, 2) DEFAULT 1.0;
 ALTER TABLE edges ADD COLUMN flow_noon DECIMAL(3, 2) DEFAULT 1.0;
 ALTER TABLE edges ADD COLUMN flow_evening DECIMAL(3, 2) DEFAULT 1.0;
+
+CREATE OR REPLACE VIEW view_bidirectional_paths AS
+-- 1. 正向路径
+SELECT 
+    source_node, 
+    target_node, 
+    distance, 
+    flow_morning, 
+    flow_noon, 
+    flow_evening,
+    (distance * flow_morning) as cost_morning,
+    (distance * flow_noon) as cost_noon,
+    (distance * flow_evening) as cost_evening
+FROM edges
+UNION ALL
+-- 2. 反向路径 (将 source 和 target 互换，模拟双向通行)
+SELECT 
+    target_node as source_node, 
+    source_node as target_node, 
+    distance, 
+    flow_morning, 
+    flow_noon, 
+    flow_evening,
+    (distance * flow_morning) as cost_morning,
+    (distance * flow_noon) as cost_noon,
+    (distance * flow_evening) as cost_evening
+FROM edges;
