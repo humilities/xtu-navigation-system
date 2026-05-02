@@ -99,3 +99,6 @@ SELECT
     (distance * flow_noon) as cost_noon,
     (distance * flow_evening) as cost_evening
 FROM edges;
+
+-- 为点评增加审核状态：0-待审核, 1-显示, 2-屏蔽
+ALTER TABLE location_reviews ADD COLUMN status INTEGER DEFAULT 0;
