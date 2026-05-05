@@ -94,3 +94,68 @@ button:hover {
     height: 300px;
   }
 }
+/* 搜索框样式 */
+.search-box {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 10px 0;
+}
+#searchInput {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 220px;
+    outline: none;
+}
+#searchBtn {
+    padding: 6px 14px;
+    background: #2385bb;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* 右侧详情侧边栏 */
+.detail-panel {
+    position: fixed;
+    top: 0;
+    right: -360px;
+    width: 320px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+    padding: 20px;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    z-index: 9999;
+}
+.detail-panel.active {
+    right: 0;
+}
+#closePanel {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+#panelImg {
+    width: 100%;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+.panel-content p {
+    line-height: 1.6;
+    color: #444;
+}
+.flow-info h4 {
+    margin: 15px 0 8px;
+}
+.flow-info ul {
+    padding-left: 20px;
+}
