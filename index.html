@@ -14,6 +14,13 @@
     <!-- 顶部查询区 -->
     <div class="search-bar">
       <h2>湘潭大学景点导航</h2>
+
+      <!-- 新增搜索框 -->
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="输入景点名称搜索...">
+        <button id="searchBtn">搜索定位</button>
+      </div>
+
       <div class="form-group">
         <label>起点：</label>
         <select id="start" class="select-active"></select>
@@ -38,6 +45,20 @@
 
     <!-- 路径详情 -->
     <div id="path-info" class="path-info"></div>
+  </div>
+
+  <!-- 景点侧边详情面板 -->
+  <div id="detailPanel" class="detail-panel">
+    <button id="closePanel">×</button>
+    <h2 id="panelTitle"></h2>
+    <div class="panel-content">
+      <img id="panelImg" src="" alt="景点图片">
+      <p id="panelDesc"></p>
+      <div class="flow-info">
+        <h4>人流时段信息</h4>
+        <ul id="panelFlow"></ul>
+      </div>
+    </div>
   </div>
 
   <!-- 引入Leaflet.js -->

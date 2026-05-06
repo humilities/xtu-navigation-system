@@ -29,10 +29,16 @@ async function initMap() {
   graph.nodes.forEach(node => {
     const correctedY = imgHeight - node.y; // 翻转 Y 轴
 
-    const marker = L.marker([correctedY, node.x])
+    const marker = L.marker([correctedY, node.x], {
+      title: node.name,
+      desc: node.desc,
+      img: "",
+      flow: ["人流时段正常"]
+    })
       .addTo(map)
       .bindPopup(`<strong>${node.name}</strong><br>${node.desc}`);
-    // 点击景点设为起点/终点（可选）
+
+    // 点击景点设为起点/终点
     marker.on('click', () => {
       const activeSelect = document.querySelector('.select-active');
       if (activeSelect) activeSelect.value = node.id;
@@ -134,3 +140,86 @@ function showPathInfo(result) {
 
 // 页面加载完成后初始化
 window.onload = initMap;
+// 搜索景点定位 + 侧边面板
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const detailPanel = document.getElementById('detailPanel');
+const closePanel = document.getElementById('closePanel');
+const panelTitle = document.getElementById('panelTitle');
+const panelImg = document.getElementById('panelImg');
+const panelDesc = document.getElementById('panelDesc');
+const panelFlow = document.getElementById('panelFlow');
+
+// 关闭侧边栏
+closePanel.onclick = function(){
+    detailPanel.classList.remove('active');
+};
+
+// 搜索功能
+searchBtn.onclick = function(){
+    let key = searchInput.value.trim();
+    if(!key){
+        alert("请输入景点名称");
+        return;
+    }
+
+    // 遍历所有地图标记，模糊匹配名称（只匹配Marker）
+    let findMarker = null;
+    map.eachLayer(layer => {
+        if(layer instanceof L.Marker && layer.options && layer.options.title && layer.options.title.includes(key)){
+            findMarker = layer;
+        }
+    });
+
+    if(!findMarker){
+        alert("未找到该景点");
+        return;
+    }
+
+    // 地图飞到该景点
+    map.setView(findMarker.getLatLng(), 16);
+
+    // 填充侧边栏信息
+    panelTitle.innerText = findMarker.options.title;
+    panelDesc.innerText = findMarker.options.desc || "暂无景点介绍";
+    panelImg.src = findMarker.options.img || "";
+    
+    panelFlow.innerHTML = "";
+    let flowList = findMarker.options.flow || ["人流正常"];
+    flowList.forEach(item=>{
+        let li = document.createElement("li");
+        li.innerText = item;
+        panelFlow.appendChild(li);
+    });
+
+    // 弹出侧边栏
+    detailPanel.classList.add('active');
+};
+
+// 回车也能搜索
+searchInput.addEventListener('keydown',function(e){
+    if(e.key === 'Enter') searchBtn.click();
+});
+
+// 给所有地图标记绑定点击事件，打开详情面板
+map.eachLayer(layer => {
+  if (layer instanceof L.Marker && layer.options && layer.options.title) {
+    layer.on('click', function() {
+      // 填充面板信息
+      panelTitle.innerText = this.options.title;
+      panelDesc.innerText = this.options.desc || "暂无景点介绍";
+      panelImg.src = this.options.img || "";
+      
+      panelFlow.innerHTML = "";
+      let flowList = this.options.flow || ["人流正常"];
+      flowList.forEach(item=>{
+        let li = document.createElement("li");
+        li.innerText = item;
+        panelFlow.appendChild(li);
+      });
+
+      // 弹出侧边栏
+      detailPanel.classList.add('active');
+    });
+  }
+});
