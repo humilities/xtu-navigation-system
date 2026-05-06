@@ -2,13 +2,13 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>XTU校园人流分布图</title>
+    <title>XTU校园人流分布动态地图</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
-
+    
     <style>
         body { 
             margin: 0; 
@@ -21,7 +21,7 @@
             width: 100%; 
         }
         .map-overlay {
-            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            font: 12px/20px 'Microsoft YaHei', 'Helvetica Neue', Arial, Helvetica, sans-serif;
             position: absolute;
             width: 25%;
             top: 0;
@@ -44,7 +44,7 @@
 </head>
 <body>
     <div id="map"></div>
-
+    
     <div class="map-overlay">
         <h3>XTU校园人流分布图</h3>
         <div class="legend">
@@ -67,7 +67,7 @@
             <div class="legend-color" style="background-color: purple; border-radius: 50%;"></div>
             <div>建筑高度</div>
         </div>
-        <p>点击标记查看详细信息</p>
+        <p>点击标记或路径查看详细信息</p>
     </div>
 
     <script>
@@ -75,7 +75,7 @@
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets/style.json?key=olZ4jftvJ5YGC8IM7Sno', // 替换为您的Maptiler API密钥
-            center: [112.8574646760874, 27.882486524204474], // 中心点坐标
+            center: [112.8574646760874, 27.882486524204474], // 三道拱门坐标
             zoom: 16
         });
 
@@ -85,11 +85,73 @@
         // 等待地图加载完成
         map.on('load', function () {
             // 添加节点标记
-            const nodes = [{"id": 1, "name": "\u4e09\u9053\u62f1\u95e8", "x": 27.882486524204474, "y": 112.8574646760874, "desc": "\u6821\u5927\u95e8\uff0c\u5168\u5929\u4eba\u6d41\u8f83\u5927", "height": 30}, {"id": 2, "name": "\u753b\u7709\u6f6d", "x": 27.885789269121094, "y": 112.85565012594184, "desc": "\u4f11\u95f2\u533a\uff0c\u4eba\u6d41\u4e2d\u7b49", "height": 0}, {"id": 3, "name": "\u56fe\u4e66\u9986\uff08\u4e3b\u9986\uff09", "x": 27.886905656766267, "y": 112.85727405713936, "desc": "\u5de5\u4f5c\u65e5\u767d\u5929\u4eba\u6d41\u5bc6\u96c6", "height": 50}, {"id": 4, "name": "\u7434\u6e56\u516c\u5bd3", "x": 27.884507593613005, "y": 112.86141341892535, "desc": "\u7f51\u7ea2\u6253\u5361\u70b9\uff0c\u508d\u665a\u4eba\u6d41\u9ad8", "height": 40}, {"id": 5, "name": "\u6bdb\u6cfd\u4e1c\u94dc\u50cf\u5e7f\u573a", "x": 27.881704621551496, "y": 112.85755951101042, "desc": "\u6e38\u5ba2\u591a\uff0c\u4eba\u6d41\u7a33\u5b9a", "height": 24}, {"id": 6, "name": "\u9038\u592b\u697c", "x": 27.89000603617028, "y": 112.8554656555356, "desc": "\u4e0a\u8bfe\u65f6\u6bb5\u4eba\u6d41\u6781\u9ad8", "height": 50}, {"id": 7, "name": "\u5357\u82d1\u98df\u5802", "x": 27.886411963867758, "y": 112.86038166405702, "desc": "\u4e09\u9910\u65f6\u6bb5\u4eba\u6d41\u5cf0\u503c"}, {"id": 8, "name": "\u4e1c\u5c71\u666f\u533a", "x": 27.890408350271212, "y": 112.85956232930344, "desc": "\u4eba\u6587\u666f\u89c2\uff0c\u4eba\u6d41\u5c11", "height": 200}, {"id": 9, "name": "\u4f53\u80b2\u9986", "x": 27.88347492814503, "y": 112.8647211036778, "desc": "\u8d5b\u4e8b\u65f6\u6bb5\u4eba\u6d41\u9ad8", "height": 50}, {"id": 10, "name": "\u5174\u6e58\u5b66\u9662\u5927\u95e8", "x": 27.88130227511824, "y": 112.85525323541432, "desc": "\u65e9\u665a\u901a\u52e4\u4eba\u6d41\u9ad8", "height": 40}, {"id": 11, "name": "\u5316\u5de5\u697c", "x": 27.888101729149327, "y": 112.85297730554637, "desc": "\u5b66\u672f\u533a\uff0c\u4eba\u6d41\u5c11", "height": 45}, {"id": 12, "name": "\u8ba1\u7b97\u4e2d\u5fc3", "x": 27.883930911527674, "y": 112.85573876712323, "desc": "\u4e0a\u8bfe\u6559\u5b66\u697c\uff0c\u4eba\u6d41\u591a", "height": 38}, {"id": 13, "name": "\u6587\u5316\u5e7f\u573a", "x": 27.884225958569143, "y": 112.85816642565233, "desc": "\u6587\u5316\u533a\uff0c\u4eba\u6d41\u591a", "height": 0}, {"id": 14, "name": "\u91d1\u7ff0\u6797", "x": 27.882066732083587, "y": 112.85956232929182, "desc": "\u5bbf\u820d\u533a\uff0c\u4eba\u6d41\u591a", "height": 40}, {"id": 15, "name": "\u897f\u6e56", "x": 27.889751236470556, "y": 112.85059516559997, "desc": "\u5bbf\u820d\u533a\uff0c\u4eba\u6d41\u591a", "height": 40}];
-
+            const nodes = [
+              {"id": 1, "name": "三道拱门", "x": 27.882486524204474, "y": 112.8574646760874, "desc": "校大门，全天人流较大","height":30},
+              {"id": 2, "name": "画眉潭", "x": 27.885789269121094, "y": 112.85565012594184, "desc": "休闲区，人流中等","height":0},
+              {"id": 3, "name": "图书馆（主馆）", "x": 27.886905656766267, "y": 112.85727405713936, "desc": "工作日白天人流密集","height":50},
+              {"id": 4, "name": "琴湖公寓", "x":27.884507593613005 , "y":  112.86141341892535, "desc": "网红打卡点，傍晚人流高","height":40},
+              {"id": 5, "name": "毛泽东铜像广场", "x": 27.881704621551496, "y":112.85755951101042, "desc": "游客多，人流稳定","height":24},
+              {"id": 6, "name": "逸夫楼", "x": 27.89000603617028, "y": 112.8554656555356, "desc": "上课时段人流极高","height":50},
+              {"id": 7, "name": "南苑食堂", "x": 27.886411963867758, "y": 112.86038166405702, "desc": "三餐时段人流峰值","height":0},
+              {"id": 8, "name": "东山景区", "x": 27.890408350271212, "y": 112.85956232930344, "desc": "人文景观，人流少","height":200},
+              {"id": 9, "name": "体育馆", "x": 27.88347492814503, "y": 112.8647211036778, "desc": "赛事时段人流高","height":50},
+              {"id": 10, "name": "兴湘学院大门", "x": 27.88130227511824, "y": 112.85525323541432, "desc": "早晚通勤人流高","height":40},
+              {"id": 11, "name": "化工楼", "x": 27.888101729149327, "y": 112.85297730554637, "desc": "学术区，人流少","height":45},
+              {"id": 12, "name": "计算中心", "x": 27.883930911527674, "y": 112.85573876712323, "desc": "上课教学楼，人流多","height":38},
+              {"id": 13, "name": "文化广场", "x": 27.884225958569143, "y": 112.85816642565233, "desc": "文化区，人流多","height":0},
+              {"id": 14, "name": "金翰林", "x": 27.882066732083587, "y":  112.85956232929182, "desc": "宿舍区，人流多","height":40},
+              {"id": 15, "name": "西湖", "x": 27.889751236470556, "y": 112.85059516559997, "desc": "宿舍区，人流多","height":40}
+            ];
+            
             // 添加边（连接线）
-            const edges = [{"from": 1, "to": 3, "distance": 550, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.4}, "weight": 0}, {"from": 1, "to": 5, "distance": 50, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.2}, "weight": 0}, {"from": 1, "to": 13, "distance": 150, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.3}, "weight": 0}, {"from": 1, "to": 12, "distance": 300, "flow": {"morning": 0.1, "noon": 0.1, "evening": 0.3}, "weight": 0}, {"from": 1, "to": 10, "distance": 150, "flow": {"morning": 0.1, "noon": 0.1, "evening": 0.2}, "weight": 0}, {"from": 2, "to": 3, "distance": 50, "flow": {"morning": 0.5, "noon": 0.5, "evening": 0.2}, "weight": 0}, {"from": 2, "to": 12, "distance": 100, "flow": {"morning": 0.4, "noon": 0.2, "evening": 0.3}, "weight": 0}, {"from": 2, "to": 6, "distance": 800, "flow": {"morning": 0.5, "noon": 0.4, "evening": 0.5}, "weight": 0}, {"from": 2, "to": 11, "distance": 600, "flow": {"morning": 0.2, "noon": 0.1, "evening": 0.2}, "weight": 0}, {"from": 3, "to": 6, "distance": 800, "flow": {"morning": 0.7, "noon": 0.5, "evening": 0.5}, "weight": 0}, {"from": 3, "to": 2, "distance": 50, "flow": {"morning": 0.5, "noon": 0.5, "evening": 0.2}, "weight": 0}, {"from": 3, "to": 1, "distance": 550, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.4}, "weight": 0}, {"from": 3, "to": 7, "distance": 200, "flow": {"morning": 0.3, "noon": 0.5, "evening": 0.6}, "weight": 0}, {"from": 3, "to": 13, "distance": 400, "flow": {"morning": 0.5, "noon": 0.3, "evening": 0.7}, "weight": 0}, {"from": 4, "to": 7, "distance": 400, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.3}, "weight": 0}, {"from": 4, "to": 14, "distance": 50, "flow": {"morning": 0.4, "noon": 0.4, "evening": 0.5}, "weight": 0}, {"from": 4, "to": 9, "distance": 250, "flow": {"morning": 0.2, "noon": 0.1, "evening": 0.3}, "weight": 0}, {"from": 5, "to": 1, "distance": 50, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.2}, "weight": 0}, {"from": 5, "to": 10, "distance": 150, "flow": {"morning": 0.3, "noon": 0.2, "evening": 0.2}, "weight": 0}, {"from": 6, "to": 2, "distance": 800, "flow": {"morning": 0.5, "noon": 0.4, "evening": 0.5}, "weight": 0}, {"from": 6, "to": 3, "distance": 800, "flow": {"morning": 0.7, "noon": 0.5, "evening": 0.5}, "weight": 0}, {"from": 6, "to": 15, "distance": 450, "flow": {"morning": 0.4, "noon": 0.5, "evening": 0.8}, "weight": 0}, {"from": 6, "to": 8, "distance": 300, "flow": {"morning": 0.2, "noon": 0.3, "evening": 0.3}, "weight": 0}, {"from": 7, "to": 8, "distance": 800, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.1}, "weight": 0}, {"from": 7, "to": 3, "distance": 200, "flow": {"morning": 0.3, "noon": 0.5, "evening": 0.6}, "weight": 0}, {"from": 7, "to": 13, "distance": 350, "flow": {"morning": 0.2, "noon": 0.5, "evening": 0.6}, "weight": 0}, {"from": 7, "to": 4, "distance": 400, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.3}, "weight": 0}, {"from": 8, "to": 6, "distance": 300, "flow": {"morning": 0.2, "noon": 0.3, "evening": 0.3}, "weight": 0}, {"from": 8, "to": 7, "distance": 800, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.1}, "weight": 0}, {"from": 9, "to": 4, "distance": 250, "flow": {"morning": 0.2, "noon": 0.1, "evening": 0.3}, "weight": 0}, {"from": 10, "to": 12, "distance": 300, "flow": {"morning": 0.2, "noon": 0.5, "evening": 0.8}, "weight": 0}, {"from": 10, "to": 1, "distance": 150, "flow": {"morning": 0.1, "noon": 0.1, "evening": 0.2}, "weight": 0}, {"from": 10, "to": 5, "distance": 150, "flow": {"morning": 0.3, "noon": 0.2, "evening": 0.2}, "weight": 0}, {"from": 11, "to": 2, "distance": 600, "flow": {"morning": 0.2, "noon": 0.1, "evening": 0.2}, "weight": 0}, {"from": 11, "to": 15, "distance": 250, "flow": {"morning": 0.2, "noon": 0.5, "evening": 0.8}, "weight": 0}, {"from": 12, "to": 2, "distance": 100, "flow": {"morning": 0.4, "noon": 0.2, "evening": 0.3}, "weight": 0}, {"from": 12, "to": 10, "distance": 300, "flow": {"morning": 0.2, "noon": 0.5, "evening": 0.8}, "weight": 0}, {"from": 13, "to": 7, "distance": 350, "flow": {"morning": 0.2, "noon": 0.5, "evening": 0.6}, "weight": 0}, {"from": 13, "to": 3, "distance": 400, "flow": {"morning": 0.5, "noon": 0.3, "evening": 0.7}, "weight": 0}, {"from": 13, "to": 1, "distance": 150, "flow": {"morning": 0.2, "noon": 0.2, "evening": 0.3}, "weight": 0}, {"from": 13, "to": 14, "distance": 150, "flow": {"morning": 0.8, "noon": 0.5, "evening": 0.8}, "weight": 0}, {"from": 14, "to": 13, "distance": 150, "flow": {"morning": 0.8, "noon": 0.5, "evening": 0.8}, "weight": 0}, {"from": 14, "to": 4, "distance": 50, "flow": {"morning": 0.4, "noon": 0.4, "evening": 0.5}, "weight": 0}, {"from": 15, "to": 11, "distance": 250, "flow": {"morning": 0.2, "noon": 0.5, "evening": 0.8}, "weight": 0}, {"from": 15, "to": 6, "distance": 450, "flow": {"morning": 0.4, "noon": 0.5, "evening": 0.8}, "weight": 0}];
-
+            const edges = [
+              {"from": 1, "to": 3, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0},
+              {"from": 1, "to": 5, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
+              {"from": 1, "to": 13, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
+              {"from": 1, "to": 12, "distance": 300, "flow": {"morning":0.1, "noon":0.1, "evening":0.3}, "weight": 0},
+              {"from": 1, "to": 10, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
+              {"from": 2, "to": 3, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0},
+              {"from": 2, "to": 12, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0},
+              {"from": 2, "to": 6, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0},
+              {"from": 2, "to": 11, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0},
+              {"from": 3, "to": 6, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0},
+              {"from": 3, "to": 2, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0}, 
+              {"from": 3, "to": 1, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0}, 
+              {"from": 3, "to": 7, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},
+              {"from": 3, "to": 13, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0},
+              {"from": 4, "to": 7, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
+              {"from": 4, "to": 14, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0},
+              {"from": 4, "to": 9, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0},
+              {"from": 5, "to": 1, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
+              {"from": 5, "to": 10, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0},
+              {"from": 6, "to": 2, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0}, 
+              {"from": 6, "to": 3, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0}, 
+              {"from": 6, "to": 15, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0},
+              {"from": 6, "to": 8, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},
+              {"from": 7, "to": 8, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0},
+              {"from": 7, "to": 3, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},  
+              {"from": 7, "to": 13, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0},
+              {"from": 7, "to": 4, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0}, 
+              {"from": 8, "to": 6, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},  
+              {"from": 8, "to": 7, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0}, 
+              {"from": 9, "to": 4, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0}, 
+              {"from": 10, "to": 12, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+              {"from": 10, "to": 1, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0}, 
+              {"from": 10, "to": 5, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0}, 
+              {"from": 11, "to": 2, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0}, 
+              {"from": 11, "to": 15, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
+              {"from": 12, "to": 2, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0}, 
+              {"from": 12, "to": 10, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0}, 
+              {"from": 13, "to": 7, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0}, 
+              {"from": 13, "to": 3, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0}, 
+              {"from": 13, "to": 1, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
+              {"from": 13, "to": 14, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0},
+              {"from": 14, "to": 13, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0}, 
+              {"from": 14, "to": 4, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0}, 
+              {"from": 15, "to": 11, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},  
+              {"from": 15, "to": 6, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0}  
+            ];
+            
             // 添加节点标记到地图
             nodes.forEach(function(node) {
                 // 根据人流描述确定标记颜色
@@ -101,7 +163,7 @@
                 } else if (node.desc.includes('人流中等')) {
                     color = '#f9886c'; // 橙色
                 }
-
+                
                 // 添加标记
                 new maplibregl.Marker({
                     color: color
@@ -109,12 +171,12 @@
                 .setLngLat([node.y, node.x])
                 .setPopup(new maplibregl.Popup().setHTML(
                     '<strong>' + node.name + '</strong><br>' +
-                    node.desc + '<br>' +
-                    'ID: ' + node.id + '<br>' +
-                    'Height: ' + node.height + 'm'
+                    '描述: ' + node.desc + '<br>' +
+                    '编号: ' + node.id + '<br>' +
+                    '高度: ' + node.height + '米'
                 ))
                 .addTo(map);
-
+                
                 // 添加表示高度的圆圈
                 map.addSource('circle-' + node.id, {
                     'type': 'geojson',
@@ -126,9 +188,9 @@
                         }
                     }
                 });
-
+                
                 const radius = Math.max(node.height / 5, 5);
-
+                
                 map.addLayer({
                     'id': 'circle-' + node.id,
                     'type': 'circle',
@@ -142,18 +204,18 @@
                     }
                 });
             });
-
+            
             // 添加连线到地图
             edges.forEach(function(edge, index) {
                 // 找到起点和终点的坐标
                 const fromNode = nodes.find(n => n.id === edge.from);
                 const toNode = nodes.find(n => n.id === edge.to);
-
+                
                 if (fromNode && toNode) {
                     // 计算平均流量以确定线条颜色
                     const flowValues = Object.values(edge.flow);
                     const avgFlow = flowValues.reduce((a, b) => a + b, 0) / flowValues.length;
-
+                    
                     // 根据流量确定颜色和宽度
                     let color = '#3bb2d0'; // 蓝色
                     let width = 2;
@@ -164,7 +226,7 @@
                         color = '#f9886c'; // 橙色
                         width = 3;
                     }
-
+                    
                     // 添加线的GeoJSON源
                     map.addSource('line-' + index, {
                         'type': 'geojson',
@@ -187,7 +249,7 @@
                             }
                         }
                     });
-
+                    
                     // 添加线图层
                     map.addLayer({
                         'id': 'line-' + index,
@@ -203,7 +265,7 @@
                             'line-opacity': 0.7
                         }
                     });
-
+                    
                     // 为线添加弹出窗口
                     map.on('click', 'line-' + index, function(e) {
                         const properties = e.features[0].properties;
@@ -211,16 +273,16 @@
                             .setLngLat(e.lngLat)
                             .setHTML(
                                 '<strong>路径信息</strong><br>' +
-                                'From ID: ' + properties.from + '<br>' +
-                                'To ID: ' + properties.to + '<br>' +
-                                'Distance: ' + properties.distance + 'm<br>' +
-                                'Morning Flow: ' + properties.morning + '<br>' +
-                                'Noon Flow: ' + properties.noon + '<br>' +
-                                'Evening Flow: ' + properties.evening
+                                '起点编号: ' + properties.from + '<br>' +
+                                '终点编号: ' + properties.to + '<br>' +
+                                '距离: ' + properties.distance + '米<br>' +
+                                '早晨流量: ' + properties.morning + '<br>' +
+                                '中午流量: ' + properties.noon + '<br>' +
+                                '傍晚流量: ' + properties.evening
                             )
                             .addTo(map);
                     });
-
+                    
                     // 改变鼠标悬停时的光标
                     map.on('mouseenter', 'line-' + index, function () {
                         map.getCanvas().style.cursor = 'pointer';
