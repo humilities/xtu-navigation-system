@@ -274,6 +274,51 @@ app.delete('/api/admin/reviews/:id', async (req, res) => {
     }
 });
 
+/**
+ * 3. 通用审核接口 (审核评论或失物招领)
+ * 参数 :type -> 'reviews' 或 'lost-found'
+ * 参数 :id   -> 对应记录的 ID
+ */
+app.patch('/api/admin/approve/:type/:id', async (req, res) => {
+    const { type, id } = req.params;
+    
+    // 根据类型映射到真实的数据库表名
+    const tableMap = {
+        'reviews': 'location_reviews',
+        'lost-found': 'lost_and_found'
+    };
+
+    const tableName = tableMap[type];
+
+    if (!tableName) {
+        return res.status(400).json({ error: '无效的审核类型' });
+    }
+
+    try {
+        const query = `
+            UPDATE ${tableName} 
+            SET status = 1 
+            WHERE id = $1 
+            RETURNING *
+        `;
+        
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: '未找到待审核的记录' });
+        }
+
+        console.log(`✅ 审核通过 [${type}]: ID ${id}`);
+        res.json({ 
+            message: '审核已通过，内容现在对所有人可见', 
+            data: result.rows[0] 
+        });
+    } catch (err) {
+        console.error('❌ 审核操作失败:', err);
+        res.status(500).json({ error: '服务器审核处理失败' });
+    }
+});
+
 // --- 启动服务器 ---
 const PORT = 3000;
 app.listen(PORT, () => {
