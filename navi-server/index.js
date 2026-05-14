@@ -174,6 +174,47 @@ app.post('/api/admin/locations/:id/photo', upload.single('image'), async (req, r
     }
 });
 
+// --- 用户投稿模块 ---
+
+// 1. 提交建筑点评
+app.post('/api/reviews', async (req, res) => {
+    const { location_id, user_nickname, rating, comment } = req.body;
+    
+    // 基础校验
+    if (!location_id || !rating || !comment) {
+        return res.status(400).json({ error: '请填写完整评价信息' });
+    }
+
+    try {
+        const query = `
+            INSERT INTO location_reviews (location_id, user_nickname, rating, comment, status) 
+            VALUES ($1, $2, $3, $4, 0) -- 默认 status=0 待审核
+            RETURNING id
+        `;
+        const result = await pool.query(query, [location_id, user_nickname || '匿名同学', rating, comment]);
+        res.json({ message: '感谢评价！内容将在管理员审核后显示。', reviewId: result.rows[0].id });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '提交评价失败' });
+    }
+});
+
+// 2. 发布失物招领
+app.post('/api/lost-found', async (req, res) => {
+    const { location_id, type, item_name, description, contact } = req.body;
+    
+    try {
+        await pool.query(
+            `INSERT INTO lost_and_found (location_id, type, item_name, description, contact, status) 
+             VALUES ($1, $2, $3, $4, $5, 0)`,
+            [location_id, type, item_name, description, contact]
+        );
+        res.json({ message: '失物信息已记录，审核通过后将出现在地图详情中。' });
+    } catch (err) {
+        res.status(500).json({ error: '发布失败' });
+    }
+});
+
 // --- 启动服务器 ---
 const PORT = 3000;
 app.listen(PORT, () => {
