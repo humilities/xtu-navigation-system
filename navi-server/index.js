@@ -154,7 +154,25 @@ app.post('/api/reviews', async (req, res) => {
     }
 });
 
+//管理员图片上传接口 安装依赖 npm install multer
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
+// 管理员为地点上传照片
+app.post('/api/admin/locations/:id/photo', upload.single('image'), async (req, res) => {
+    const { id } = req.params;
+    const imageUrl = `/uploads/${req.file.filename}`; // 生成访问路径
+    
+    try {
+        await pool.query(
+            'INSERT INTO location_photos (location_id, url) VALUES ($1, $2)',
+            [id, imageUrl]
+        );
+        res.json({ success: true, url: imageUrl });
+    } catch (err) {
+        res.status(500).json({ error: '图片保存失败' });
+    }
+});
 
 // --- 启动服务器 ---
 const PORT = 3000;
