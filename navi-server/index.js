@@ -75,6 +75,7 @@ app.get('/api/locations/:id', async (req, res) => {
   }
 });
 
+//3.查询最短路径
 app.get('/api/navigation/route', async (req, res) => {
     const { start, end } = req.query;
 
@@ -115,6 +116,24 @@ app.get('/api/navigation/route', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: '路径计算失败' });
+    }
+});
+
+//搜索优化接口 用户可以通过输入文字来查找
+app.get('/api/locations/search', async (req, res) => {
+    const { keyword } = req.query;
+    if (!keyword) return res.json([]);
+    try {
+        const query = `
+            SELECT id, name, category, longitude as lng, latitude as lat 
+            FROM locations 
+            WHERE name ILIKE $1 OR description ILIKE $1 
+            LIMIT 10
+        `;
+        const result = await pool.query(query, [`%${keyword}%`]);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: '搜索失败' });
     }
 });
 
