@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { findShortestPath } = require('./utils/navigation');
 const app = express();
 
 // 添加这行测试代码，启动时看终端输出什么
@@ -72,6 +73,49 @@ app.get('/api/locations/:id', async (req, res) => {
     console.error('❌ 获取详情失败:', err);
     res.status(500).send('服务器内部错误');
   }
+});
+
+app.get('/api/navigation/route', async (req, res) => {
+    const { start, end } = req.query;
+
+    if (!start || !end) {
+        return res.status(400).json({ message: '缺少起点或终点' });
+    }
+
+    try {
+        // A. 自动判断当前时间段
+        const hour = new Date().getHours();
+        let costField = 'cost_noon'; // 默认中午
+        if (hour >= 6 && hour < 11) costField = 'cost_morning';
+        else if (hour >= 17 && hour < 22) costField = 'cost_evening';
+
+        // B. 从视图中拉取数据
+        // 视图已经帮我们处理好了 A->B 和 B->A 的逻辑
+        const query = `SELECT source_node, target_node, ${costField} as weight FROM view_bidirectional_paths`;
+        const { rows: edges } = await pool.query(query);
+
+        // C. 执行计算
+        const result = findShortestPath(edges, parseInt(start), parseInt(end));
+
+        // D. 聚合路径节点的详细坐标 (方便前端 Mapbox 直接绘线)
+        const nodeCoordsQuery = `
+            SELECT id, longitude as lng, latitude as lat 
+            FROM locations 
+            WHERE id = ANY($1)
+            ORDER BY array_position($1, id)
+        `;
+        const { rows: coords } = await pool.query(nodeCoordsQuery, [result.nodes]);
+
+        res.json({
+            period: costField,
+            pathNodes: result.nodes,
+            coordinates: coords.map(c => [parseFloat(c.lng), parseFloat(c.lat)]),
+            totalCost: result.cost
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: '路径计算失败' });
+    }
 });
 
 // --- 启动服务器 ---
