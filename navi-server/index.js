@@ -215,6 +215,65 @@ app.post('/api/lost-found', async (req, res) => {
     }
 });
 
+// --- 空间数据与内容维护模块 (管理员专供) ---
+
+/**
+ * 1. 更新地点信息 (坐标、名称、描述、高度)
+ * 用途：校内建筑更名、施工导致坐标微调、或高度数据更新
+ */
+app.put('/api/admin/locations/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, longitude, latitude, height, description, category } = req.body;
+
+    try {
+        const query = `
+            UPDATE locations 
+            SET 
+                name = COALESCE($1, name),
+                longitude = COALESCE($2, longitude),
+                latitude = COALESCE($3, latitude),
+                height = COALESCE($4, height),
+                description = COALESCE($5, description),
+                category = COALESCE($6, category)
+            WHERE id = $7
+            RETURNING *
+        `;
+        const values = [name, longitude, latitude, height, description, category, id];
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: '未找到该建筑 ID' });
+        }
+
+        console.log(`✅ 建筑数据已更新: ${result.rows[0].name}`);
+        res.json({ message: '地点数据更新成功', data: result.rows[0] });
+    } catch (err) {
+        console.error('❌ 更新地点失败:', err);
+        res.status(500).json({ error: '数据库更新失败' });
+    }
+});
+
+/**
+ * 2. 删除违规评论
+ * 用途：管理员清理不当言论，维护校园环境
+ */
+app.delete('/api/admin/reviews/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query('DELETE FROM location_reviews WHERE id = $1 RETURNING *', [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: '未找到该评论' });
+        }
+
+        res.json({ message: '评论已成功移除', deletedReview: result.rows[0] });
+    } catch (err) {
+        console.error('❌ 删除评论失败:', err);
+        res.status(500).json({ error: '操作失败' });
+    }
+});
+
 // --- 启动服务器 ---
 const PORT = 3000;
 app.listen(PORT, () => {
