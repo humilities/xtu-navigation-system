@@ -137,6 +137,25 @@ app.get('/api/locations/search', async (req, res) => {
     }
 });
 
+//用户投稿接口 失物招领与点评 只需要允许普通学生提交内容 但这些内容的初始状态=0
+//失物招领投稿 POST /api/lost-found
+//建筑点评投稿 POST /api/reviews
+app.post('/api/reviews', async (req, res) => {
+    const { location_id, user_nickname, rating, comment } = req.body;
+    try {
+        await pool.query(
+            `INSERT INTO location_reviews (location_id, user_nickname, rating, comment, status) 
+             VALUES ($1, $2, $3, $4, 0)`, 
+            [location_id, user_nickname, rating, comment]
+        );
+        res.json({ message: '评价提交成功，等待管理员审核' });
+    } catch (err) {
+        res.status(500).json({ error: '提交失败' });
+    }
+});
+
+
+
 // --- 启动服务器 ---
 const PORT = 3000;
 app.listen(PORT, () => {
