@@ -26,7 +26,17 @@ pool.query('SELECT NOW()', (err, res) => {
 // --- 中间件配置 ---
 app.use(cors());
 app.use(express.json());
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 2. 【核心新增】托管整个前端静态资源 (index.html, css, js, assets 等)
+// 因为你的 index.js 在 navi-server 里，而 index.html 在根目录，所以用 '..' 向上跳一级
+app.use(express.static(path.join(__dirname, '../3d')));
+
+// 3. 【核心新增】显式定义根路径路由，确保访问 localhost:3000 直接显示地图
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
 
 // 管理员权限验证中间件 (核心：门卫)
 const adminAuth = (req, res, next) => {
