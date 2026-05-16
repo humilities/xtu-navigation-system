@@ -5,293 +5,220 @@
     <title>XTU校园人流分布动态地图</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
     
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-        }
-        #map { 
-            position: absolute; 
-            top: 0; 
-            bottom: 0; 
-            width: 100%; 
-        }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        
+        /* 图例样式 */
         .map-overlay {
-            font: 12px/20px 'Microsoft YaHei', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            font: 12px/20px 'Microsoft YaHei', Arial, sans-serif;
             position: absolute;
-            width: 25%;
-            top: 0;
-            left: 0;
+            width: 200px;
+            top: 10px;
+            left: 10px;
             padding: 10px;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.9);
             z-index: 1;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .legend {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
+        .legend { display: flex; align-items: center; margin-bottom: 5px; }
+        .legend-color { width: 15px; height: 15px; margin-right: 8px; border-radius: 3px; }
+
+        /* --- 第二阶段：侧边栏样式 --- */
+        .sidebar {
+            position: absolute;
+            top: 0;
+            right: -400px; /* 初始隐藏在屏幕右侧外 */
+            width: 350px;
+            height: 100%;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+            z-index: 10;
+            transition: right 0.3s ease; /* 滑动动画 */
+            overflow-y: auto;
+            padding: 25px;
+            box-sizing: border-box;
         }
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
+        .sidebar.active { right: 0; } /* 激活时滑动进入 */
+        .close-btn { 
+            position: absolute; top: 10px; right: 15px; 
+            font-size: 28px; cursor: pointer; border: none; background: none; color: #999;
+        }
+        .photo-gallery { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
+        .photo-gallery img { width: 100%; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .review-item { border-bottom: 1px solid #eee; padding: 12px 0; }
+        .review-user { font-weight: bold; color: #333; font-size: 14px; }
+        .review-rating { color: #f39c12; margin-left: 5px; }
+        .lost-found-card { 
+            background: #fff3cd; border-left: 5px solid #ffc107; 
+            padding: 12px; margin: 10px 0; border-radius: 4px;
         }
     </style>
 </head>
 <body>
+
     <div id="map"></div>
     
     <div class="map-overlay">
-        <h3>XTU校园人流分布图</h3>
-        <div class="legend">
-            <div class="legend-color" style="background-color: red;"></div>
-            <div>高人流区域</div>
+        <h3>XTU校园导航</h3>
+        <div class="legend"><div class="legend-color" style="background-color: #ef4c4c;"></div><div>高人流区域</div></div>
+        <div class="legend"><div class="legend-color" style="background-color: #f9886c;"></div><div>中等人流区域</div></div>
+        <div class="legend"><div class="legend-color" style="background-color: #3bb2d0;"></div><div>普通/连接路径</div></div>
+        <p style="color: #666; font-size: 11px;">点击地点图标查看详情与照片</p>
+    </div>
+
+    <div id="sidebar" class="sidebar">
+        <button class="close-btn" onclick="closeSidebar()">×</button>
+        <div id="sidebar-content">
+            <h2 id="detail-name" style="margin-top: 10px; color: #2c3e50;">地点名称</h2>
+            <p id="detail-desc" style="color: #7f8c8d; line-height: 1.6;"></p>
+            
+            <div id="photo-gallery" class="photo-gallery">
+                </div>
+
+            <div id="lost-found-container">
+                </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <h4>学生评价</h4>
+            <div id="reviews-section">
+                </div>
         </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: orange;"></div>
-            <div>中等人流区域</div>
-        </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: green;"></div>
-            <div>低人流区域</div>
-        </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: blue;"></div>
-            <div>连接路径</div>
-        </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: purple; border-radius: 50%;"></div>
-            <div>建筑高度</div>
-        </div>
-        <p>点击标记或路径查看详细信息</p>
     </div>
 
     <script>
-        // 地图配置
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/streets/style.json?key=olZ4jftvJ5YGC8IM7Sno', // 替换为您的Maptiler API密钥
-            center: [112.8574646760874, 27.882486524204474], // 三道拱门坐标
+            style: 'https://api.maptiler.com/maps/streets/style.json?key=olZ4jftvJ5YGC8IM7Sno', 
+            center: [112.8574646760874, 27.882486524204474],
             zoom: 16
         });
 
-        // 添加导航控件
         map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-        // 等待地图加载完成
-        map.on('load', function () {
-            // 添加节点标记
-            const nodes = [
-              {"id": 1, "name": "三道拱门", "x": 27.882486524204474, "y": 112.8574646760874, "desc": "校大门，全天人流较大","height":30},
-              {"id": 2, "name": "画眉潭", "x": 27.885789269121094, "y": 112.85565012594184, "desc": "休闲区，人流中等","height":0},
-              {"id": 3, "name": "图书馆（主馆）", "x": 27.886905656766267, "y": 112.85727405713936, "desc": "工作日白天人流密集","height":50},
-              {"id": 4, "name": "琴湖公寓", "x":27.884507593613005 , "y":  112.86141341892535, "desc": "网红打卡点，傍晚人流高","height":40},
-              {"id": 5, "name": "毛泽东铜像广场", "x": 27.881704621551496, "y":112.85755951101042, "desc": "游客多，人流稳定","height":24},
-              {"id": 6, "name": "逸夫楼", "x": 27.89000603617028, "y": 112.8554656555356, "desc": "上课时段人流极高","height":50},
-              {"id": 7, "name": "南苑食堂", "x": 27.886411963867758, "y": 112.86038166405702, "desc": "三餐时段人流峰值","height":0},
-              {"id": 8, "name": "东山景区", "x": 27.890408350271212, "y": 112.85956232930344, "desc": "人文景观，人流少","height":200},
-              {"id": 9, "name": "体育馆", "x": 27.88347492814503, "y": 112.8647211036778, "desc": "赛事时段人流高","height":50},
-              {"id": 10, "name": "兴湘学院大门", "x": 27.88130227511824, "y": 112.85525323541432, "desc": "早晚通勤人流高","height":40},
-              {"id": 11, "name": "化工楼", "x": 27.888101729149327, "y": 112.85297730554637, "desc": "学术区，人流少","height":45},
-              {"id": 12, "name": "计算中心", "x": 27.883930911527674, "y": 112.85573876712323, "desc": "上课教学楼，人流多","height":38},
-              {"id": 13, "name": "文化广场", "x": 27.884225958569143, "y": 112.85816642565233, "desc": "文化区，人流多","height":0},
-              {"id": 14, "name": "金翰林", "x": 27.882066732083587, "y":  112.85956232929182, "desc": "宿舍区，人流多","height":40},
-              {"id": 15, "name": "西湖", "x": 27.889751236470556, "y": 112.85059516559997, "desc": "宿舍区，人流多","height":40}
-            ];
-            
-            // 添加边（连接线）
-            const edges = [
-              {"from": 1, "to": 3, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0},
-              {"from": 1, "to": 5, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
-              {"from": 1, "to": 13, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 1, "to": 12, "distance": 300, "flow": {"morning":0.1, "noon":0.1, "evening":0.3}, "weight": 0},
-              {"from": 1, "to": 10, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
-              {"from": 2, "to": 3, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0},
-              {"from": 2, "to": 12, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 2, "to": 6, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0},
-              {"from": 2, "to": 11, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0},
-              {"from": 3, "to": 6, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0},
-              {"from": 3, "to": 2, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0}, 
-              {"from": 3, "to": 1, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0}, 
-              {"from": 3, "to": 7, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},
-              {"from": 3, "to": 13, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0},
-              {"from": 4, "to": 7, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 4, "to": 14, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0},
-              {"from": 4, "to": 9, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0},
-              {"from": 5, "to": 1, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
-              {"from": 5, "to": 10, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0},
-              {"from": 6, "to": 2, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0}, 
-              {"from": 6, "to": 3, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0}, 
-              {"from": 6, "to": 15, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 6, "to": 8, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},
-              {"from": 7, "to": 8, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0},
-              {"from": 7, "to": 3, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},  
-              {"from": 7, "to": 13, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0},
-              {"from": 7, "to": 4, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0}, 
-              {"from": 8, "to": 6, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},  
-              {"from": 8, "to": 7, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0}, 
-              {"from": 9, "to": 4, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0}, 
-              {"from": 10, "to": 12, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 10, "to": 1, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0}, 
-              {"from": 10, "to": 5, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0}, 
-              {"from": 11, "to": 2, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0}, 
-              {"from": 11, "to": 15, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 12, "to": 2, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0}, 
-              {"from": 12, "to": 10, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0}, 
-              {"from": 13, "to": 7, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0}, 
-              {"from": 13, "to": 3, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0}, 
-              {"from": 13, "to": 1, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 13, "to": 14, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 14, "to": 13, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0}, 
-              {"from": 14, "to": 4, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0}, 
-              {"from": 15, "to": 11, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},  
-              {"from": 15, "to": 6, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0}  
-            ];
-            
-            // 添加节点标记到地图
-            nodes.forEach(function(node) {
-                // 根据人流描述确定标记颜色
-                let color = '#3bb2d0'; // 默认蓝色
-                if (node.desc.includes('人流较大')) {
-                    color = '#ef4c4c'; // 红色
-                } else if (node.desc.includes('人流密集')) {
-                    color = '#ef4c4c'; // 红色
-                } else if (node.desc.includes('人流中等')) {
-                    color = '#f9886c'; // 橙色
+        // 关闭侧边栏函数
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('active');
+        }
+
+        // 核心功能：获取地点详情并渲染侧边栏
+        async function showLocationDetail(id) {
+            try {
+                const response = await fetch(`/api/locations/${id}`);
+                const data = await response.json();
+
+                // 1. 设置文字信息
+                document.getElementById('detail-name').innerText = data.name;
+                document.getElementById('detail-desc').innerText = data.description || "暂无详细介绍。";
+
+                // 2. 渲染照片
+                const gallery = document.getElementById('photo-gallery');
+                gallery.innerHTML = data.photos.length > 0 
+                    ? data.photos.map(p => `<img src="http://localhost:3000${p.url}" alt="building photo">`).join('')
+                    : '<p style="color:#ccc">暂无实地照片</p>';
+
+                // 3. 渲染失物招领
+                const lfContainer = document.getElementById('lost-found-container');
+                if (data.lost_found && data.lost_found.length > 0) {
+                    lfContainer.innerHTML = '<h4>📢 失物招领</h4>' + data.lost_found.map(item => `
+                        <div class="lost-found-card">
+                            <strong>${item.type === 'lost' ? '【寻物】' : '【拾获】'} ${item.item_name}</strong><br>
+                            <small>详情: ${item.description || '无'}</small><br>
+                            <small>联系: ${item.contact}</small>
+                        </div>
+                    `).join('');
+                } else {
+                    lfContainer.innerHTML = '';
                 }
-                
-                // 添加标记
-                new maplibregl.Marker({
-                    color: color
-                })
-                .setLngLat([node.y, node.x])
-                .setPopup(new maplibregl.Popup().setHTML(
-                    '<strong>' + node.name + '</strong><br>' +
-                    '描述: ' + node.desc + '<br>' +
-                    '编号: ' + node.id + '<br>' +
-                    '高度: ' + node.height + '米'
-                ))
-                .addTo(map);
-                
-                // 添加表示高度的圆圈
-                map.addSource('circle-' + node.id, {
-                    'type': 'geojson',
-                    'data': {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': [node.y, node.x]
-                        }
-                    }
+
+                // 4. 渲染评价
+                const reviewSection = document.getElementById('reviews-section');
+                reviewSection.innerHTML = data.reviews.length > 0
+                    ? data.reviews.map(r => `
+                        <div class="review-item">
+                            <span class="review-user">${r.user_nickname}</span>
+                            <span class="review-rating">${'⭐'.repeat(r.rating)}</span>
+                            <p style="margin: 5px 0 0 0; font-size: 13px;">${r.comment}</p>
+                        </div>
+                    `).join('')
+                    : '<p style="color:#999">暂无评价，快来抢沙发！</p>';
+
+                // 5. 滑出侧边栏
+                document.getElementById('sidebar').classList.add('active');
+
+            } catch (err) {
+                console.error("❌ 无法获取详情数据:", err);
+            }
+        }
+
+        map.on('load', async function () {
+            console.log("🚀 同步后端数据中...");
+
+            try {
+                // 1. 加载建筑点位
+                const resBuildings = await fetch('/api/map/buildings');
+                const buildings = await resBuildings.json();
+
+                buildings.forEach(node => {
+                    let color = '#3bb2d0'; 
+                    if ((node.description || "").match(/人流较大|人流密集/)) color = '#ef4c4c';
+                    else if ((node.description || "").includes('人流中等')) color = '#f9886c';
+
+                    const marker = new maplibregl.Marker({ color: color })
+                        .setLngLat([parseFloat(node.longitude), parseFloat(node.latitude)])
+                        .addTo(map);
+
+                    // --- 关键修改：点击 Marker 时触发侧边栏 ---
+                    marker.getElement().addEventListener('click', () => {
+                        showLocationDetail(node.id);
+                    });
                 });
-                
-                const radius = Math.max(node.height / 5, 5);
-                
-                map.addLayer({
-                    'id': 'circle-' + node.id,
-                    'type': 'circle',
-                    'source': 'circle-' + node.id,
-                    'paint': {
-                        'circle-radius': radius,
-                        'circle-color': 'purple',
-                        'circle-opacity': 0.3,
-                        'circle-stroke-width': 1,
-                        'circle-stroke-color': 'purple'
-                    }
-                });
-            });
-            
-            // 添加连线到地图
-            edges.forEach(function(edge, index) {
-                // 找到起点和终点的坐标
-                const fromNode = nodes.find(n => n.id === edge.from);
-                const toNode = nodes.find(n => n.id === edge.to);
-                
-                if (fromNode && toNode) {
-                    // 计算平均流量以确定线条颜色
-                    const flowValues = Object.values(edge.flow);
-                    const avgFlow = flowValues.reduce((a, b) => a + b, 0) / flowValues.length;
-                    
-                    // 根据流量确定颜色和宽度
-                    let color = '#3bb2d0'; // 蓝色
-                    let width = 2;
-                    if (avgFlow >= 0.4) {
-                        color = '#ef4c4c'; // 红色
-                        width = 4;
-                    } else if (avgFlow >= 0.2) {
-                        color = '#f9886c'; // 橙色
-                        width = 3;
-                    }
-                    
-                    // 添加线的GeoJSON源
-                    map.addSource('line-' + index, {
+
+                // 2. 加载动态连线
+                const resEdges = await fetch('/api/map/edges');
+                const edges = await resEdges.json();
+
+                edges.forEach((edge, index) => {
+                    const lineId = `line-${index}`;
+                    let lineColor = '#3bb2d0';
+                    let lineWidth = 2;
+                    if (edge.flow_weight > 0.4) { lineColor = '#ef4c4c'; lineWidth = 4; }
+                    else if (edge.flow_weight > 0.2) { lineColor = '#f9886c'; lineWidth = 3; }
+
+                    map.addSource(lineId, {
                         'type': 'geojson',
                         'data': {
                             'type': 'Feature',
-                            'properties': {
-                                'from': edge.from,
-                                'to': edge.to,
-                                'distance': edge.distance,
-                                'morning': edge.flow.morning,
-                                'noon': edge.flow.noon,
-                                'evening': edge.flow.evening
-                            },
                             'geometry': {
                                 'type': 'LineString',
                                 'coordinates': [
-                                    [fromNode.y, fromNode.x],
-                                    [toNode.y, toNode.x]
+                                    [parseFloat(edge.start_lng), parseFloat(edge.start_lat)],
+                                    [parseFloat(edge.end_lng), parseFloat(edge.end_lat)]
                                 ]
                             }
                         }
                     });
-                    
-                    // 添加线图层
+
                     map.addLayer({
-                        'id': 'line-' + index,
+                        'id': lineId,
                         'type': 'line',
-                        'source': 'line-' + index,
-                        'layout': {
-                            'line-join': 'round',
-                            'line-cap': 'round'
-                        },
+                        'source': lineId,
                         'paint': {
-                            'line-color': color,
-                            'line-width': width,
-                            'line-opacity': 0.7
+                            'line-color': lineColor,
+                            'line-width': lineWidth,
+                            'line-opacity': 0.6
                         }
                     });
-                    
-                    // 为线添加弹出窗口
-                    map.on('click', 'line-' + index, function(e) {
-                        const properties = e.features[0].properties;
-                        new maplibregl.Popup()
-                            .setLngLat(e.lngLat)
-                            .setHTML(
-                                '<strong>路径信息</strong><br>' +
-                                '起点编号: ' + properties.from + '<br>' +
-                                '终点编号: ' + properties.to + '<br>' +
-                                '距离: ' + properties.distance + '米<br>' +
-                                '早晨流量: ' + properties.morning + '<br>' +
-                                '中午流量: ' + properties.noon + '<br>' +
-                                '傍晚流量: ' + properties.evening
-                            )
-                            .addTo(map);
-                    });
-                    
-                    // 改变鼠标悬停时的光标
-                    map.on('mouseenter', 'line-' + index, function () {
-                        map.getCanvas().style.cursor = 'pointer';
-                    });
-                    map.on('mouseleave', 'line-' + index, function () {
-                        map.getCanvas().style.cursor = '';
-                    });
-                }
-            });
+                });
+
+                console.log("✅ 全部数据渲染完成");
+            } catch (err) {
+                console.error("❌ 加载失败:", err);
+            }
         });
     </script>
 </body>
