@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
-const { findShortestPath } = require('./utils/navigation');
+const { findShortestPath } = require('./navigation');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
