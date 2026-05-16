@@ -3,6 +3,7 @@ let map = null;
 let pathLayer = null; // 路线图层
 let graph = null; // 拓扑数据
 let imgHeight = 1460; // 图片高度（用于Y轴翻转）
+let allMarkers = []; // 新增：保存所有标记用于筛选
 
 // 初始化地图
 async function initMap() {
@@ -25,7 +26,7 @@ async function initMap() {
   L.imageOverlay('./assets/xtu-map.jpg', bounds).addTo(map);
   map.fitBounds(bounds);
 
-  // 4. 标注所有景点
+  // 4. 标注所有景点（修复：绑定category并存入数组）
   graph.nodes.forEach(node => {
     const correctedY = imgHeight - node.y; // 翻转 Y 轴
 
@@ -33,10 +34,14 @@ async function initMap() {
       title: node.name,
       desc: node.desc,
       img: "",
-      flow: ["人流时段正常"]
+      flow: ["人流时段正常"],
+      category: node.category // 绑定分类
     })
       .addTo(map)
       .bindPopup(`<strong>${node.name}</strong><br>${node.desc}`);
+
+    // 存入数组，用于筛选
+    allMarkers.push(marker);
 
     // 点击景点设为起点/终点
     marker.on('click', () => {
@@ -48,7 +53,6 @@ async function initMap() {
   // 5. 绑定查询按钮事件
   document.getElementById('search-btn').addEventListener('click', searchPath);
   // 6. 绑定时段切换事件
-  // 修改 map.js 中时段切换事件的绑定代码（大约在 initMap 函数的第 6 步）
   document.getElementById('time-period').addEventListener('change', () => {
     const startVal = document.getElementById('start').value;
     const endVal = document.getElementById('end').value;
@@ -57,14 +61,32 @@ async function initMap() {
       searchPath();
     }
   });
-//   document.getElementById('time-period').addEventListener('change', () => {
-//     if (document.getElementById('start').value && document.getElementById('end').value) {
-//       searchPath();
-//     }
-//   });
 
   // 7. 初始化下拉框（起点/终点）
   initSelectOptions();
+
+  // 8. 给所有地图标记绑定点击事件（移到这里，标记创建完成后执行）
+  map.eachLayer(layer => {
+    if (layer instanceof L.Marker && layer.options && layer.options.title) {
+      layer.on('click', function() {
+        // 填充面板信息
+        panelTitle.innerText = this.options.title;
+        panelDesc.innerText = this.options.desc || "暂无景点介绍";
+        panelImg.src = this.options.img || "";
+        
+        panelFlow.innerHTML = "";
+        let flowList = this.options.flow || ["人流正常"];
+        flowList.forEach(item=>{
+          let li = document.createElement("li");
+          li.innerText = item;
+          panelFlow.appendChild(li);
+        });
+
+        // 弹出侧边栏
+        detailPanel.classList.add('active');
+      });
+    }
+  });
 }
 
 // 初始化起点/终点下拉框
@@ -140,6 +162,7 @@ function showPathInfo(result) {
 
 // 页面加载完成后初始化
 window.onload = initMap;
+
 // 搜索景点定位 + 侧边面板
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
@@ -201,25 +224,30 @@ searchInput.addEventListener('keydown',function(e){
     if(e.key === 'Enter') searchBtn.click();
 });
 
-// 给所有地图标记绑定点击事件，打开详情面板
-map.eachLayer(layer => {
-  if (layer instanceof L.Marker && layer.options && layer.options.title) {
-    layer.on('click', function() {
-      // 填充面板信息
-      panelTitle.innerText = this.options.title;
-      panelDesc.innerText = this.options.desc || "暂无景点介绍";
-      panelImg.src = this.options.img || "";
-      
-      panelFlow.innerHTML = "";
-      let flowList = this.options.flow || ["人流正常"];
-      flowList.forEach(item=>{
-        let li = document.createElement("li");
-        li.innerText = item;
-        panelFlow.appendChild(li);
-      });
+// ========== 分类筛选器功能（修复版） ==========
+function filterMarkers(category) {
+  // 先把所有标记都恢复到地图上
+  allMarkers.forEach(marker => {
+    marker.addTo(map);
+  });
 
-      // 弹出侧边栏
-      detailPanel.classList.add('active');
+  // 如果不是"全部"，再隐藏不匹配的分类
+  if (category !== 'all') {
+    allMarkers.forEach(marker => {
+      if (marker.options.category !== category) {
+        map.removeLayer(marker);
+      }
     });
   }
+}
+
+// 绑定筛选按钮点击事件
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    // 切换按钮选中样式
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    let type = this.getAttribute('data-category');
+    filterMarkers(type);
+  });
 });
