@@ -63,7 +63,28 @@ app.get('/api/map/buildings', async (req, res) => {
     }
 });
 
+// 搜索接口：支持模糊匹配并对齐前端字段名
+// ⚠️ 必须在 /api/locations/:id 之前注册，否则 Express 会把 'search' 当作 :id 参数
+app.get('/api/locations/search', async (req, res) => {
+    const { keyword } = req.query;
+    if (!keyword) return res.json([]);
+    try {
+        const query = `
+            SELECT id, name, category, longitude as lng, latitude as lat 
+            FROM locations 
+            WHERE name ILIKE $1 OR description ILIKE $1 
+            LIMIT 5
+        `;
+        const result = await pool.query(query, [`%${keyword}%`]);
+        res.json(result.rows); // 确保返回的是 [{id, name, lng, lat}, ...]
+    } catch (err) {
+        console.error('搜索出错:', err);
+        res.status(500).json({ error: '服务器内部错误' });
+    }
+});
+
 // 获取地点详情 (聚合照片、评论、失物)
+// ⚠️ 必须在 /api/locations/search 之后注册，避免路由冲突
 app.get('/api/locations/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -82,27 +103,6 @@ app.get('/api/locations/:id', async (req, res) => {
     }
 });
 
-// 搜索接口 (模糊查询优化版)
-app.get('/api/locations/search', async (req, res) => {
-    const { keyword } = req.query;
-    if (!keyword) return res.json([]);
-    try {
-        // 1. 使用 ILIKE + % 实现模糊匹配，用户搜“图书馆”能中“图书馆（主馆）”
-        // 2. 统一使用 'as lng' 和 'as lat' 确保前端 handleSearch 函数能正确读取
-        const query = `
-            SELECT id, name, category, longitude as lng, latitude as lat 
-            FROM locations 
-            WHERE name ILIKE $1 OR description ILIKE $1 
-            LIMIT 10
-        `;
-        const result = await pool.query(query, [`%${keyword}%`]);
-        res.json(result.rows);
-    } catch (err) {
-        console.error('搜索失败:', err);
-        res.status(500).json({ error: '搜索失败' });
-    }
-});
-
 // 路径规划
 app.get('/api/navigation/route', async (req, res) => {
     const { start, end } = req.query;
@@ -113,7 +113,7 @@ app.get('/api/navigation/route', async (req, res) => {
     if (isNaN(startId) || isNaN(endId)) {
         return res.status(400).json({ message: '起点或终点ID无效' });
     }
-    
+
     try {
         const hour = new Date().getHours();
         let costField = 'cost_noon';

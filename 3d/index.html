@@ -54,7 +54,7 @@
 
     <div class="top-bar">
         <div class="search-box">
-            <input type="text" id="kw" placeholder="输入地点名称 (如：图书馆)">
+            <input type="text" id="search-input" placeholder="输入地点名称 (如：图书馆)">
             <button onclick="handleSearch()">搜索</button>
         </div>
         <button onclick="toggleNavPanel()" style="background:white; border:none; padding:10px; border-radius:8px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.2)">🧭 路径规划</button>
@@ -120,24 +120,27 @@
         }
 
         // --- 1. 搜索功能修复 ---
-        async function handleSearch() {
-            const kw = document.getElementById('kw').value;
-            if (!kw) return alert('请输入搜索关键词');
-            
-            try {
-                const res = await fetch(`${API_BASE}/api/locations/search?keyword=${encodeURIComponent(kw)}`);
-                const data = await res.json();
-                if (data && data.length > 0) {
-                    const target = data[0];
-                    map.flyTo({ center: [target.longitude || target.lng, target.latitude || target.lat], zoom: 18 });
-                    showLocationDetail(target.id);
-                } else {
-                    alert('未找到相关地点');
-                }
-            } catch (err) {
-                console.error('搜索出错:', err);
-            }
+        // 前端 index.html 中的核心逻辑同步
+async function handleSearch() {
+    const keyword = document.getElementById('search-input').value;
+    if (!keyword) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/locations/search?keyword=${encodeURIComponent(keyword)}`);
+        const results = await res.json();
+
+        if (results.length > 0) {
+            const target = results[0];
+            // 确保这里使用的是 target.lng 而不是 target.longitude
+            map.flyTo({ center: [target.lng, target.lat], zoom: 17 });
+            showLocationDetail(target.id); // 直接用 ID 查详情
+        } else {
+            alert('未找到相关地点');
         }
+    } catch (err) {
+        console.error('搜索请求失败', err);
+    }
+}
 
         // --- 2. 显示详情 ---
         async function showLocationDetail(id) {
