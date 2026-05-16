@@ -82,16 +82,23 @@ app.get('/api/locations/:id', async (req, res) => {
     }
 });
 
-// 搜索接口 (模糊查询)
+// 搜索接口 (模糊查询优化版)
 app.get('/api/locations/search', async (req, res) => {
     const { keyword } = req.query;
     if (!keyword) return res.json([]);
     try {
-        const query = `SELECT id, name, category, longitude as lng, latitude as lat 
-                       FROM locations WHERE name ILIKE $1 OR description ILIKE $1 LIMIT 10`;
+        // 1. 使用 ILIKE + % 实现模糊匹配，用户搜“图书馆”能中“图书馆（主馆）”
+        // 2. 统一使用 'as lng' 和 'as lat' 确保前端 handleSearch 函数能正确读取
+        const query = `
+            SELECT id, name, category, longitude as lng, latitude as lat 
+            FROM locations 
+            WHERE name ILIKE $1 OR description ILIKE $1 
+            LIMIT 10
+        `;
         const result = await pool.query(query, [`%${keyword}%`]);
         res.json(result.rows);
     } catch (err) {
+        console.error('搜索失败:', err);
         res.status(500).json({ error: '搜索失败' });
     }
 });
@@ -99,7 +106,14 @@ app.get('/api/locations/search', async (req, res) => {
 // 路径规划
 app.get('/api/navigation/route', async (req, res) => {
     const { start, end } = req.query;
-    if (!start || !end) return res.status(400).json({ message: '缺少起点或终点' });
+    // 转换并检查是否为有效数字
+    const startId = parseInt(start);
+    const endId = parseInt(end);
+
+    if (isNaN(startId) || isNaN(endId)) {
+        return res.status(400).json({ message: '起点或终点ID无效' });
+    }
+    
     try {
         const hour = new Date().getHours();
         let costField = 'cost_noon';
@@ -142,24 +156,6 @@ app.get('/api/map/edges', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: '无法获取路径数据' });
-    }
-});
-
-// 模糊搜索地点
-app.get('/api/locations/search', async (req, res) => {
-    const { keyword } = req.query;
-    try {
-        const query = `
-            SELECT id, name, longitude, latitude 
-            FROM locations 
-            WHERE name ILIKE $1 
-            LIMIT 5
-        `;
-        const { rows } = await pool.query(query, [`%${keyword}%`]);
-        res.json(rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: '搜索失败' });
     }
 });
 
