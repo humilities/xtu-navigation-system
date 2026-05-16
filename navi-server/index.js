@@ -243,6 +243,16 @@ app.delete('/api/admin/reviews/:id', adminAuth, async (req, res) => {
     }
 });
 
+// 删除失物招领（管理员拒绝时使用）
+app.delete('/api/admin/lost-found/:id', adminAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM lost_and_found WHERE id = $1', [req.params.id]);
+        res.json({ message: '已删除' });
+    } catch (err) {
+        res.status(500).json({ error: '删除失败' });
+    }
+});
+
 // 管理员上传照片
 app.post('/api/admin/locations/:id/photo', adminAuth, upload.single('image'), async (req, res) => {
     const imageUrl = `/uploads/${req.file.filename}`;
