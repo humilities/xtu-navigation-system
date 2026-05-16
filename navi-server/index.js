@@ -145,6 +145,24 @@ app.get('/api/map/edges', async (req, res) => {
     }
 });
 
+// 模糊搜索地点
+app.get('/api/locations/search', async (req, res) => {
+    const { keyword } = req.query;
+    try {
+        const query = `
+            SELECT id, name, longitude, latitude 
+            FROM locations 
+            WHERE name ILIKE $1 
+            LIMIT 5
+        `;
+        const { rows } = await pool.query(query, [`%${keyword}%`]);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '搜索失败' });
+    }
+});
+
 // ==========================================
 // 2. 用户投稿接口 (所有人可用，默认 status=0)
 // ==========================================
