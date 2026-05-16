@@ -1,3 +1,25 @@
+CREATE TABLE IF NOT EXISTS locations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    longitude NUMERIC,
+    latitude NUMERIC,
+    height NUMERIC
+);
+
+CREATE TABLE IF NOT EXISTS edges (
+    id SERIAL PRIMARY KEY,
+    source_node INT,
+    target_node INT,
+    road_name VARCHAR(255),
+    flow_morning NUMERIC,
+    flow_noon NUMERIC,
+    flow_evening NUMERIC
+);
+
+CREATE OR REPLACE VIEW view_bidirectional_paths AS
+SELECT * FROM edges; 
+
+
 SELECT id, name, longitude, latitude, height 
 FROM locations 
 WHERE height = 10.0 OR longitude < 112.0 
