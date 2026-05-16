@@ -125,6 +125,26 @@ app.get('/api/navigation/route', async (req, res) => {
     }
 });
 
+// 获取所有路径连线 (用于地图初始化显示)
+app.get('/api/map/edges', async (req, res) => {
+    try {
+        const query = `
+            SELECT p.source_node, p.target_node, 
+                   l1.longitude as start_lng, l1.latitude as start_lat,
+                   l2.longitude as end_lng, l2.latitude as end_lat,
+                   p.cost_noon as flow_weight
+            FROM view_bidirectional_paths p
+            JOIN locations l1 ON p.source_node = l1.id
+            JOIN locations l2 ON p.target_node = l2.id
+        `;
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '无法获取路径数据' });
+    }
+});
+
 // ==========================================
 // 2. 用户投稿接口 (所有人可用，默认 status=0)
 // ==========================================
