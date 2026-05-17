@@ -102,3 +102,6 @@ FROM edges;
 
 -- 为点评增加审核状态：0-待审核, 1-显示, 2-屏蔽
 ALTER TABLE location_reviews ADD COLUMN status INTEGER DEFAULT 0;
+
+-- 将 type 字段从数字类型改为字符串类型
+ALTER TABLE lost_and_found ALTER COLUMN type TYPE VARCHAR(20);

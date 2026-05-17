@@ -2,297 +2,1327 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>XTU校园人流分布动态地图</title>
+    <title>XTU校园导航与动态地图</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
-    
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Microsoft YaHei', sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+        /* ── 顶部工具栏 ── */
+        .top-bar {
+            position: absolute; top: 15px; left: 15px; z-index: 5;
+            display: flex; gap: 10px; align-items: flex-start;
         }
-        #map { 
-            position: absolute; 
-            top: 0; 
-            bottom: 0; 
-            width: 100%; 
+
+        /* ── 搜索框 + 下拉提示 ── */
+        .search-wrapper { position: relative; }
+        .search-box {
+            background: white; padding: 5px; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: flex;
         }
-        .map-overlay {
-            font: 12px/20px 'Microsoft YaHei', 'Helvetica Neue', Arial, Helvetica, sans-serif;
-            position: absolute;
-            width: 25%;
-            top: 0;
-            left: 0;
-            padding: 10px;
-            background-color: rgba(255, 255, 255, 0.8);
-            z-index: 1;
+        .search-box input { border: none; padding: 10px; width: 220px; outline: none; font-size: 14px; }
+        .search-box button {
+            background: #3bb2d0; color: white; border: none;
+            padding: 0 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;
         }
-        .legend {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
+        #search-suggestions {
+            display: none; position: absolute; top: calc(100% + 4px); left: 0;
+            width: 100%; background: white; border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 20;
+            max-height: 220px; overflow-y: auto;
         }
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
+        .suggestion-item {
+            padding: 10px 14px; cursor: pointer; font-size: 13px;
+            border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;
         }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover, .suggestion-item.active { background: #f0fafd; }
+        .cat-tag { font-size: 11px; color: #3bb2d0; background: #e8f7fb; padding: 2px 6px; border-radius: 10px; }
+
+        /* ── 导航面板 ── */
+        .nav-panel {
+            background: white; padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            display: none; flex-direction: column; gap: 10px; width: 210px;
+        }
+        .nav-panel label { font-size: 12px; color: #666; margin-bottom: -5px; }
+        .nav-panel input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        #period-badge {
+            font-size: 12px; padding: 6px 8px; border-radius: 4px;
+            text-align: center; display: none; font-weight: bold;
+        }
+        #period-badge.morning { background: #fff3cd; color: #856404; }
+        #period-badge.noon    { background: #d1ecf1; color: #0c5460; }
+        #period-badge.evening { background: #f8d7da; color: #721c24; }
+
+        /* ── 路径信息条 ── */
+        #route-info {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+            background: white; border-radius: 8px; padding: 10px 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 5;
+            font-size: 13px; color: #333; gap: 18px; align-items: center;
+            display: none;
+        }
+        #route-info.show { display: flex; }
+        #route-info span { font-weight: bold; color: #2ecc71; }
+        
+
+        /* ── 侧边栏 ── */
+        .sidebar {
+            position: absolute; top: 0; right: -420px; width: 400px; height: 100%;
+            background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            z-index: 10; transition: right 0.3s ease; overflow-y: auto;
+            padding: 20px; box-sizing: border-box;
+        }
+        .sidebar.active { right: 0; }
+        .close-btn { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; border: none; background: none; }
+
+        .btn-group { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .btn-nav-set { flex: 1; padding: 8px; border: 1px solid #2ecc71; background: white; color: #2ecc71; cursor: pointer; border-radius: 4px; font-size: 12px; }
+        .btn-nav-set:hover { background: #2ecc71; color: white; }
+
+        .photo-gallery img { width: 100%; border-radius: 8px; margin-top: 10px; }
+        .lost-found-card { background: #fff3cd; border-left: 5px solid #ffc107; padding: 10px; margin: 8px 0; font-size: 13px; border-radius: 4px; }
+        .review-card { background: #f9f9f9; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 13px; }
+        .review-card .reviewer { font-weight: bold; color: #333; }
+        .stars { color: #f5a623; }
+
+        .btn-action { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #3bb2d0; background: white; color: #3bb2d0; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        .btn-action:hover { background: #3bb2d0; color: white; }
+
+        hr { border: none; border-top: 1px solid #eee; margin: 14px 0; }
+
+        /* ── 模态框 ── */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 12px; padding: 24px; width: 360px; max-width: 95vw; box-shadow: 0 8px 30px rgba(0,0,0,0.2); position: relative; }
+        .modal h3 { margin: 0 0 14px; font-size: 16px; }
+        .modal .loc-name { font-size: 13px; margin: 0 0 12px; }
+        .modal label { font-size: 12px; color: #666; display: block; margin: 10px 0 4px; }
+        .modal input, .modal textarea, .modal select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; box-sizing: border-box; font-family: inherit; }
+        .modal textarea { resize: vertical; min-height: 80px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+        .btn-submit { flex: 1; padding: 10px; background: #3bb2d0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .btn-cancel { flex: 1; padding: 10px; background: #f0f0f0; color: #555; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .close-modal { position: absolute; top: 12px; right: 16px; font-size: 20px; cursor: pointer; border: none; background: none; color: #999; }
+
+        /* ── 管理员入口 ── */
+        #admin-btn {
+            position: absolute; bottom: 20px; right: 20px; z-index: 5;
+            background: #2c3e50; color: white; border: none; padding: 8px 14px;
+            border-radius: 6px; cursor: pointer; font-size: 12px; opacity: 0.7;
+        }
+        #admin-btn:hover { opacity: 1; }
+
+        /* ── 管理员面板 ── */
+        #admin-panel {
+            position: absolute; top: 0; left: -480px; width: 460px; height: 100%;
+            background: #f8f9fa; box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+            z-index: 20; transition: left 0.3s ease; overflow-y: auto;
+            padding: 20px; box-sizing: border-box;
+        }
+        #admin-panel.active { left: 0; }
+        #admin-panel h2 { margin-top: 0; font-size: 16px; color: #2c3e50; }
+        .admin-section { background: white; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+        .admin-section h4 { margin: 0 0 10px; font-size: 14px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .pending-card { border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 13px; }
+        .pending-card .meta { color: #888; font-size: 11px; margin-bottom: 4px; }
+        .pending-card .actions { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-approve { padding: 5px 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-reject  { padding: 5px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .admin-login { display: flex; flex-direction: column; gap: 10px; }
+        .admin-login input { padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; }
+        .count-badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 10px; margin-left: 6px; }
+        .badge-review { background: #d4edda; color: #155724; }
+        .badge-lf     { background: #fff3cd; color: #856404; }
+
+        /* ── 管理员面板 Tab 切换 ── */
+        .admin-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+        .admin-tab {
+            padding: 6px 12px; border: 1px solid #ddd; border-radius: 5px;
+            background: white; cursor: pointer; font-size: 12px; color: #555;
+        }
+        .admin-tab.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+
+        /* ── 照片管理 ── */
+        .photo-manage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+        .photo-manage-item { position: relative; }
+        .photo-manage-item img { width: 100%; height: 70px; object-fit: cover; border-radius: 4px; }
+        .photo-del-btn {
+            position: absolute; top: 2px; right: 2px; background: rgba(231,76,60,0.85);
+            color: white; border: none; border-radius: 3px; cursor: pointer;
+            font-size: 11px; padding: 2px 5px; line-height: 1;
+        }
+
+        /* ── 边列表 ── */
+        .edge-card { border: 1px solid #e8e8e8; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: 12px; }
+        .edge-card .edge-title { font-weight: bold; color: #333; margin-bottom: 4px; }
+        .edge-card .edge-costs { color: #666; font-size: 11px; }
+        .edge-card .actions { display: flex; gap: 6px; margin-top: 6px; }
+        .btn-sm { padding: 3px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; }
+        .btn-sm-blue   { background: #3bb2d0; color: white; }
+        .btn-sm-red    { background: #e74c3c; color: white; }
+        .btn-sm-green  { background: #2ecc71; color: white; }
+
+        /* ── 表单行 ── */
+        .form-row { display: flex; gap: 8px; }
+        .form-row input { flex: 1; }
+        .admin-form label { font-size: 12px; color: #555; display: block; margin: 8px 0 3px; }
+        .admin-form input, .admin-form textarea, .admin-form select {
+            width: 100%; padding: 7px; border: 1px solid #ddd;
+            border-radius: 4px; font-size: 13px; box-sizing: border-box;
+        }
+        .admin-form textarea { min-height: 60px; resize: vertical; }
+
+        /* ── 地点选择器 ── */
+        #admin-loc-select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    
-    <div class="map-overlay">
-        <h3>XTU校园人流分布图</h3>
-        <div class="legend">
-            <div class="legend-color" style="background-color: red;"></div>
-            <div>高人流区域</div>
+
+<div id="map"></div>
+
+<!-- ══ 顶部工具栏 ══ -->
+<div class="top-bar">
+    <div class="search-wrapper">
+        <div class="search-box">
+            <input type="text" id="search-input"
+                   placeholder="输入地点名称 (如：图书馆)"
+                   oninput="onSearchInput()"
+                   onkeydown="onSearchKeydown(event)"
+                   autocomplete="off">
+            <button onclick="handleSearch()">搜索</button>
         </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: orange;"></div>
-            <div>中等人流区域</div>
-        </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: green;"></div>
-            <div>低人流区域</div>
-        </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: blue;"></div>
-            <div>连接路径</div>
-        </div>
-        <div class="legend">
-            <div class="legend-color" style="background-color: purple; border-radius: 50%;"></div>
-            <div>建筑高度</div>
-        </div>
-        <p>点击标记或路径查看详细信息</p>
+        <div id="search-suggestions"></div>
     </div>
 
-    <script>
-        // 地图配置
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: 'https://api.maptiler.com/maps/019e311f-2d66-7a0c-9a2f-b18ea652e610/style.json?key=olZ4jftvJ5YGC8IM7Sno', // 替换为您的Maptiler API密钥
-            center: [112.8574646760874, 27.882486524204474], // 三道拱门坐标
-            zoom: 16
+    <button onclick="toggleNavPanel()"
+            style="background:white;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2)">
+        🧭 路径规划
+    </button>
+
+    <div id="nav-panel" class="nav-panel">
+        <div id="period-badge"></div>
+        <label>起点</label>
+        <input type="text" id="start-name" placeholder="请输入起点名称">
+        <label>终点</label>
+        <input type="text" id="end-name" placeholder="请输入终点名称">
+        <button onclick="getRoute()"
+                style="background:#2ecc71;color:white;border:none;padding:10px;border-radius:4px;cursor:pointer;font-weight:bold;">
+            开始导航
+        </button>
+    </div>
+</div>
+
+<!-- 路径结果信息条 -->
+<div id="route-info">
+    <div>🕐 时段：<span id="ri-period">—</span></div>
+    <div>📍 途经：<span id="ri-nodes">—</span> 个节点</div>
+    <div>⏱ 综合代价：<span id="ri-cost">—</span></div>
+    <button onclick="clearRoute()"
+            style="padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:white;cursor:pointer;font-size:12px;">
+        清除路线
+    </button>
+</div>
+
+<!-- ══ 地点详情侧边栏 ══ -->
+<div id="sidebar" class="sidebar">
+    <button class="close-btn" onclick="closeSidebar()">×</button>
+    <h2 id="title">地点名称</h2>
+    <div class="btn-group">
+        <button class="btn-nav-set" onclick="setAsNavPoint('start')">📍 设为起点</button>
+        <button class="btn-nav-set" onclick="setAsNavPoint('end')">🏁 设为终点</button>
+    </div>
+    <p id="desc" style="color:#666;font-size:14px;margin-top:15px;"></p>
+    <div id="photos" class="photo-gallery"></div>
+
+    <hr>
+    <h4>📢 失物招领</h4>
+    <div id="lost-found"></div>
+    <button class="btn-action" onclick="openLostFoundModal()">📝 发布失物招领</button>
+
+    <hr>
+    <h4>⭐ 学生评价</h4>
+    <div id="reviews"></div>
+    <button class="btn-action" onclick="openReviewModal()">✍️ 我要评价</button>
+</div>
+
+<!-- ══ 管理员入口按钮 ══ -->
+<button id="admin-btn" onclick="toggleAdminPanel()">🔐 管理员后台</button>
+
+<!-- ══ 管理员面板 ══ -->
+<div id="admin-panel">
+    <button class="close-btn" onclick="toggleAdminPanel()">×</button>
+    <h2>🛡 管理员后台</h2>
+
+    <!-- 登录区 -->
+    <div id="admin-login-section" class="admin-section">
+        <h4>身份验证</h4>
+        <div class="admin-login">
+            <input type="password" id="admin-token-input" placeholder="请输入管理员密钥"
+                   onkeydown="if(event.key==='Enter') adminLogin()">
+            <button class="btn-submit" onclick="adminLogin()">登录验证</button>
+        </div>
+        <p id="admin-login-msg" style="font-size:12px;color:#e74c3c;margin:6px 0 0;"></p>
+    </div>
+
+    <!-- 登录后内容 -->
+    <div id="admin-content" style="display:none">
+
+        <!-- Tab 导航 -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" onclick="switchTab('tab-review',this)">📝 内容审核</button>
+            <button class="admin-tab" onclick="switchTab('tab-location',this)">📍 地点管理</button>
+            <button class="admin-tab" onclick="switchTab('tab-photo',this)">🖼 照片管理</button>
+            <button class="admin-tab" onclick="switchTab('tab-edge',this)">🔗 路网管理</button>
+        </div>
+
+        <!-- ① 内容审核 -->
+        <div id="tab-review" class="admin-tab-content">
+            <button onclick="reloadAdminData()"
+                    style="width:100%;padding:7px;background:#ecf0f1;border:none;border-radius:5px;cursor:pointer;font-size:12px;margin-bottom:10px;">
+                🔄 刷新待审核
+            </button>
+            <div class="admin-section">
+                <h4>待审核评价 <span id="review-count" class="count-badge badge-review">0</span></h4>
+                <div id="pending-reviews"><p style="font-size:12px;color:#999">加载中...</p></div>
+            </div>
+            <div class="admin-section">
+                <h4>待审核失物招领 <span id="lf-count" class="count-badge badge-lf">0</span></h4>
+                <div id="pending-lf"><p style="font-size:12px;color:#999">加载中...</p></div>
+            </div>
+            <!-- 已发布内容管理 -->
+            <div class="admin-section">
+                <h4>🗂 管理已发布内容（按地点）</h4>
+                <select id="published-loc-select"
+                        style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px;margin-bottom:8px">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <button onclick="loadPublishedContent()"
+                        style="width:100%;padding:7px;background:#3bb2d0;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-bottom:10px;">
+                    🔍 查询已发布内容
+                </button>
+                <div id="published-reviews-section" style="display:none">
+                    <p style="font-size:12px;font-weight:bold;color:#155724;margin:6px 0 4px">✅ 已发布评价</p>
+                    <div id="published-reviews"></div>
+                </div>
+                <div id="published-lf-section" style="display:none">
+                    <p style="font-size:12px;font-weight:bold;color:#856404;margin:6px 0 4px">📢 已发布失物招领</p>
+                    <div id="published-lf"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ② 地点管理 -->
+        <div id="tab-location" class="admin-tab-content" style="display:none">
+            <!-- 选择已有地点 -->
+            <div class="admin-section">
+                <h4>✏️ 编辑现有地点</h4>
+                <select id="admin-loc-select" onchange="onAdminLocSelect()">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <div id="admin-loc-edit-form" class="admin-form" style="display:none">
+                    <label>名称</label>
+                    <input type="text" id="edit-loc-name">
+                    <label>描述</label>
+                    <textarea id="edit-loc-desc"></textarea>
+                    <label>分类</label>
+                    <input type="text" id="edit-loc-category" placeholder="如：教学楼、食堂">
+                    <label>经度</label>
+                    <input type="number" id="edit-loc-lng" step="0.000001">
+                    <label>纬度</label>
+                    <input type="number" id="edit-loc-lat" step="0.000001">
+                    <label>高度（米）</label>
+                    <input type="number" id="edit-loc-height" step="0.1">
+                    <div style="display:flex;gap:8px;margin-top:10px">
+                        <button class="btn-submit" onclick="saveLocEdit()" style="flex:1">💾 保存修改</button>
+                        <button onclick="deleteLocation()" style="flex:1;padding:10px;background:#e74c3c;color:white;border:none;border-radius:5px;cursor:pointer;font-size:13px;">🗑 删除建筑</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 新增地点 -->
+            <div class="admin-section">
+                <h4>➕ 新增建筑/地点</h4>
+                <div class="admin-form">
+                    <label>名称 <span style="color:#e74c3c">*</span></label>
+                    <input type="text" id="new-loc-name" placeholder="如：第二教学楼">
+                    <label>描述</label>
+                    <textarea id="new-loc-desc" placeholder="简要描述该建筑..."></textarea>
+                    <label>分类</label>
+                    <input type="text" id="new-loc-category" placeholder="教学楼 / 食堂 / 宿舍...">
+                    <div class="form-row">
+                        <div style="flex:1">
+                            <label>经度 <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-loc-lng" placeholder="112.857" step="0.000001">
+                        </div>
+                        <div style="flex:1">
+                            <label>纬度 <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-loc-lat" placeholder="27.882" step="0.000001">
+                        </div>
+                    </div>
+                    <label>高度（米）</label>
+                    <input type="number" id="new-loc-height" placeholder="15" step="0.1" value="10">
+                    <button class="btn-submit" onclick="createLocation()" style="width:100%;margin-top:10px">➕ 新增建筑</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ③ 照片管理 -->
+        <div id="tab-photo" class="admin-tab-content" style="display:none">
+            <div class="admin-section">
+                <h4>🖼 上传建筑照片</h4>
+                <label style="font-size:12px;color:#555;display:block;margin-bottom:6px">选择地点</label>
+                <select id="photo-loc-select" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px;margin-bottom:10px">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <input type="file" id="photo-file-input" accept="image/*" multiple
+                       style="font-size:13px;margin-bottom:8px;width:100%">
+                <button class="btn-submit" onclick="uploadPhotos()" style="width:100%">📤 上传照片</button>
+                <div id="upload-progress" style="font-size:12px;color:#3bb2d0;margin-top:6px;display:none">上传中...</div>
+            </div>
+            <div class="admin-section">
+                <h4>🗂 管理已有照片</h4>
+                <select id="photo-manage-select" onchange="loadLocationPhotos()"
+                        style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px;margin-bottom:10px">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <div id="photo-manage-grid" class="photo-manage-grid"></div>
+            </div>
+        </div>
+
+        <!-- ④ 路网管理 -->
+        <div id="tab-edge" class="admin-tab-content" style="display:none">
+            <!-- 新增边 -->
+            <div class="admin-section">
+                <h4>➕ 新增路径（边）</h4>
+                <div class="admin-form">
+                    <div class="form-row">
+                        <div style="flex:1">
+                            <label>起点 ID <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-edge-src" placeholder="节点ID">
+                        </div>
+                        <div style="flex:1">
+                            <label>终点 ID <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-edge-tgt" placeholder="节点ID">
+                        </div>
+                    </div>
+                    <p style="font-size:11px;color:#888;margin:4px 0 2px">拥挤度权重（值越大越拥挤，绕路概率越高）</p>
+                    <div class="form-row">
+                        <div style="flex:1"><label>早高峰</label><input type="number" id="new-edge-morning" placeholder="1" step="0.1" value="1"></div>
+                        <div style="flex:1"><label>平峰</label><input type="number" id="new-edge-noon" placeholder="1" step="0.1" value="1"></div>
+                        <div style="flex:1"><label>晚高峰</label><input type="number" id="new-edge-evening" placeholder="1" step="0.1" value="1"></div>
+                    </div>
+                    <button class="btn-submit" onclick="createEdge()" style="width:100%;margin-top:10px">➕ 新增边</button>
+                </div>
+            </div>
+            <!-- 边列表 -->
+            <div class="admin-section">
+                <h4>📋 现有路径列表
+                    <button onclick="loadEdges()" style="font-size:11px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;margin-left:8px;background:white">🔄 刷新</button>
+                </h4>
+                <div id="edge-list"><p style="font-size:12px;color:#999">点击刷新加载</p></div>
+            </div>
+        </div>
+
+    </div><!-- /admin-content -->
+</div>
+
+<!-- ══ 评价模态框 ══ -->
+<div id="review-modal" class="modal-overlay">
+    <div class="modal">
+        <button class="close-modal" onclick="closeModal('review-modal')">×</button>
+        <h3>✍️ 发表评价</h3>
+        <p id="review-location-name" class="loc-name" style="color:#3bb2d0;"></p>
+        <label>昵称（选填）</label>
+        <input type="text" id="review-nickname" placeholder="匿名同学">
+        <label>评分</label>
+        <select id="review-rating">
+            <option value="5">⭐⭐⭐⭐⭐ 非常满意</option>
+            <option value="4">⭐⭐⭐⭐ 满意</option>
+            <option value="3">⭐⭐⭐ 一般</option>
+            <option value="2">⭐⭐ 不满意</option>
+            <option value="1">⭐ 非常不满意</option>
+        </select>
+        <label>评价内容 <span style="color:#e74c3c">*</span></label>
+        <textarea id="review-comment" placeholder="分享你对这个地点的看法..."></textarea>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('review-modal')">取消</button>
+            <button class="btn-submit" onclick="submitReview()">提交（待审核）</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 失物招领模态框 ══ -->
+<div id="lf-modal" class="modal-overlay">
+    <div class="modal">
+        <button class="close-modal" onclick="closeModal('lf-modal')">×</button>
+        <h3>📝 发布失物招领</h3>
+        <p id="lf-location-name" class="loc-name" style="color:#f5a623;"></p>
+        <label>类型</label>
+        <select id="lf-type">
+            <option value="失物">失物（我丢了东西）</option>
+            <option value="招领">招领（我捡到了东西）</option>
+        </select>
+        <label>物品名称 <span style="color:#e74c3c">*</span></label>
+        <input type="text" id="lf-item" placeholder="如：黑色钱包、学生证">
+        <label>详细描述</label>
+        <textarea id="lf-desc" placeholder="物品特征、丢失/发现时间地点等..."></textarea>
+        <label>联系方式</label>
+        <input type="text" id="lf-contact" placeholder="微信 / QQ / 手机号">
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('lf-modal')">取消</button>
+            <button class="btn-submit" onclick="submitLostFound()" style="background:#f5a623;">提交（待审核）</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ════════════════════════════════
+//  地图初始化
+// ════════════════════════════════
+const map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://api.maptiler.com/maps/streets/style.json?key=olZ4jftvJ5YGC8IM7Sno',
+    center: [112.857, 27.882],
+    zoom: 16
+});
+
+const API_BASE = 'http://localhost:3000';
+let currentSelectedLocation = null;
+let adminToken = null;
+let allLocations = []; // 缓存全部点位，供搜索下拉使用
+
+// ════════════════════════════════
+//  功能1：搜索 + 下拉提示
+// ════════════════════════════════
+let searchTimer = null;
+let suggestionIndex = -1;
+
+function onSearchInput() {
+    clearTimeout(searchTimer);
+    const kw = document.getElementById('search-input').value.trim();
+    if (!kw) { hideSuggestions(); return; }
+
+    searchTimer = setTimeout(async () => {
+        // 先用本地缓存做即时过滤（零延迟体验）
+        let matched = allLocations.filter(loc =>
+            loc.name.includes(kw) || (loc.category && loc.category.includes(kw))
+        ).slice(0, 6);
+
+        // 本地缓存无结果时请求后端（能匹配 description 等更多字段）
+        if (matched.length === 0) {
+            try {
+                const res = await fetch(`${API_BASE}/api/locations/search?keyword=${encodeURIComponent(kw)}`);
+                const data = await res.json();
+                // search 接口返回 {id,name,lng,lat,category}
+                matched = data.map(d => ({ ...d, longitude: d.lng, latitude: d.lat }));
+            } catch (_) {}
+        }
+        renderSuggestions(matched, kw);
+    }, 200);
+}
+
+function renderSuggestions(list, kw) {
+    const box = document.getElementById('search-suggestions');
+    if (!list.length) { hideSuggestions(); return; }
+
+    box.innerHTML = list.map((loc, i) => {
+        const highlighted = escHtml(loc.name).replace(
+            new RegExp(escHtml(kw), 'gi'),
+            m => `<b style="color:#3bb2d0">${m}</b>`
+        );
+        return `<div class="suggestion-item" data-id="${loc.id}" data-name="${escAttr(loc.name)}"
+                    data-lng="${loc.longitude ?? loc.lng}" data-lat="${loc.latitude ?? loc.lat}"
+                    onclick="selectSuggestion(this)">
+            <span>${highlighted}</span>
+            ${loc.category ? `<span class="cat-tag">${escHtml(loc.category)}</span>` : ''}
+        </div>`;
+    }).join('');
+    box.style.display = 'block';
+    suggestionIndex = -1;
+}
+
+function hideSuggestions() {
+    document.getElementById('search-suggestions').style.display = 'none';
+    suggestionIndex = -1;
+}
+
+function onSearchKeydown(e) {
+    const items = document.querySelectorAll('.suggestion-item');
+    if (!items.length) { if (e.key === 'Enter') handleSearch(); return; }
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        suggestionIndex = Math.min(suggestionIndex + 1, items.length - 1);
+        highlightSuggestion(items);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        suggestionIndex = Math.max(suggestionIndex - 1, -1);
+        highlightSuggestion(items);
+    } else if (e.key === 'Enter') {
+        if (suggestionIndex >= 0) { selectSuggestion(items[suggestionIndex]); }
+        else { handleSearch(); }
+    } else if (e.key === 'Escape') {
+        hideSuggestions();
+    }
+}
+
+function highlightSuggestion(items) {
+    items.forEach((el, i) => el.classList.toggle('active', i === suggestionIndex));
+    if (suggestionIndex >= 0) {
+        document.getElementById('search-input').value = items[suggestionIndex].dataset.name;
+    }
+}
+
+function selectSuggestion(el) {
+    const id  = parseInt(el.dataset.id);
+    const lng = parseFloat(el.dataset.lng);
+    const lat = parseFloat(el.dataset.lat);
+    document.getElementById('search-input').value = el.dataset.name;
+    hideSuggestions();
+    map.flyTo({ center: [lng, lat], zoom: 17 });
+    showLocationDetail(id);
+}
+
+async function handleSearch() {
+    hideSuggestions();
+    const keyword = document.getElementById('search-input').value.trim();
+    if (!keyword) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/locations/search?keyword=${encodeURIComponent(keyword)}`);
+        const results = await res.json();
+        if (results.length > 0) {
+            const t = results[0];
+            map.flyTo({ center: [parseFloat(t.lng ?? t.longitude), parseFloat(t.lat ?? t.latitude)], zoom: 17 });
+            showLocationDetail(t.id);
+        } else {
+            alert('未找到相关地点，请尝试其他关键词');
+        }
+    } catch (err) {
+        console.error('搜索失败:', err);
+        alert('搜索服务暂时不可用');
+    }
+}
+
+// 点击地图其他地方关闭下拉
+document.addEventListener('click', e => {
+    if (!e.target.closest('.search-wrapper')) hideSuggestions();
+});
+
+// ════════════════════════════════
+//  功能2：导航面板 + 时段路径
+// ════════════════════════════════
+function toggleNavPanel() {
+    const p = document.getElementById('nav-panel');
+    p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+    if (p.style.display === 'flex') updatePeriodBadge();
+}
+
+// 时段判断逻辑与后端 index.js 完全对应：
+//   早高峰 6–11, 晚高峰 17–22, 其余平峰
+function getCurrentPeriod() {
+    const h = new Date().getHours();
+    if (h >= 6  && h < 11) return { key: 'cost_morning', label: '🌅 早高峰（6:00–11:00）拥挤度高',  cls: 'morning' };
+    if (h >= 17 && h < 22) return { key: 'cost_evening', label: '🌆 晚高峰（17:00–22:00）拥挤度较高', cls: 'evening' };
+    return                        { key: 'cost_noon',    label: '☀️ 平峰时段，道路顺畅',              cls: 'noon' };
+}
+
+function updatePeriodBadge() {
+    const period = getCurrentPeriod();
+    const badge  = document.getElementById('period-badge');
+    badge.textContent = `当前时段：${period.label}`;
+    badge.className   = period.cls;
+    badge.style.display = 'block';
+}
+
+function setAsNavPoint(type) {
+    if (!currentSelectedLocation) return;
+    document.getElementById(`${type}-name`).value = currentSelectedLocation.name;
+    document.getElementById('nav-panel').style.display = 'flex';
+    updatePeriodBadge();
+}
+
+async function getRoute() {
+    const startName = document.getElementById('start-name').value.trim();
+    const endName   = document.getElementById('end-name').value.trim();
+    if (!startName || !endName) return alert('请输入起点和终点名称');
+
+    const startId = await getLocationIdByName(startName);
+    const endId   = await getLocationIdByName(endName);
+    if (!startId) return alert(`找不到起点"${startName}"，请检查名称是否正确`);
+    if (!endId)   return alert(`找不到终点"${endName}"，请检查名称是否正确`);
+
+    try {
+        const res  = await fetch(`${API_BASE}/api/navigation/route?start=${startId}&end=${endId}`);
+        const data = await res.json();
+
+        // 绘制路线
+        if (map.getLayer('route')) { map.removeLayer('route'); map.removeSource('route'); }
+        map.addSource('route', {
+            type: 'geojson',
+            data: { type: 'Feature', geometry: { type: 'LineString', coordinates: data.coordinates } }
+        });
+        map.addLayer({
+            id: 'route', type: 'line', source: 'route',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#2ecc71', 'line-width': 6, 'line-opacity': 0.85 }
         });
 
-        // 添加导航控件
-        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+        const bounds = data.coordinates.reduce(
+            (acc, c) => acc.extend(c),
+            new maplibregl.LngLatBounds(data.coordinates[0], data.coordinates[0])
+        );
+        map.fitBounds(bounds, { padding: 60 });
 
-        // 等待地图加载完成
-        map.on('load', function () {
-            // 添加节点标记
-            const nodes = [
-              {"id": 1, "name": "三道拱门", "x": 27.882486524204474, "y": 112.8574646760874, "desc": "校大门，全天人流较大","height":30},
-              {"id": 2, "name": "画眉潭", "x": 27.885789269121094, "y": 112.85565012594184, "desc": "休闲区，人流中等","height":0},
-              {"id": 3, "name": "图书馆（主馆）", "x": 27.886905656766267, "y": 112.85727405713936, "desc": "工作日白天人流密集","height":50},
-              {"id": 4, "name": "琴湖公寓", "x":27.884507593613005 , "y":  112.86141341892535, "desc": "网红打卡点，傍晚人流高","height":40},
-              {"id": 5, "name": "毛泽东铜像广场", "x": 27.881704621551496, "y":112.85755951101042, "desc": "游客多，人流稳定","height":24},
-              {"id": 6, "name": "逸夫楼", "x": 27.89000603617028, "y": 112.8554656555356, "desc": "上课时段人流极高","height":50},
-              {"id": 7, "name": "南苑食堂", "x": 27.886411963867758, "y": 112.86038166405702, "desc": "三餐时段人流峰值","height":0},
-              {"id": 8, "name": "东山景区", "x": 27.890408350271212, "y": 112.85956232930344, "desc": "人文景观，人流少","height":200},
-              {"id": 9, "name": "体育馆", "x": 27.88347492814503, "y": 112.8647211036778, "desc": "赛事时段人流高","height":50},
-              {"id": 10, "name": "兴湘学院大门", "x": 27.88130227511824, "y": 112.85525323541432, "desc": "早晚通勤人流高","height":40},
-              {"id": 11, "name": "化工楼", "x": 27.888101729149327, "y": 112.85297730554637, "desc": "学术区，人流少","height":45},
-              {"id": 12, "name": "计算中心", "x": 27.883930911527674, "y": 112.85573876712323, "desc": "上课教学楼，人流多","height":38},
-              {"id": 13, "name": "文化广场", "x": 27.884225958569143, "y": 112.85816642565233, "desc": "文化区，人流多","height":0},
-              {"id": 14, "name": "金翰林", "x": 27.882066732083587, "y":  112.85956232929182, "desc": "宿舍区，人流多","height":40},
-              {"id": 15, "name": "西湖", "x": 27.889751236470556, "y": 112.85059516559997, "desc": "宿舍区，人流多","height":40}
-            ];
-            
-            // 添加边（连接线）
-            const edges = [
-              {"from": 1, "to": 3, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0},
-              {"from": 1, "to": 5, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
-              {"from": 1, "to": 13, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 1, "to": 12, "distance": 300, "flow": {"morning":0.1, "noon":0.1, "evening":0.3}, "weight": 0},
-              {"from": 1, "to": 10, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0},
-              {"from": 2, "to": 3, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0},
-              {"from": 2, "to": 12, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 2, "to": 6, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0},
-              {"from": 2, "to": 11, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0},
-              {"from": 3, "to": 6, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0},
-              {"from": 3, "to": 2, "distance": 50, "flow": {"morning":0.5, "noon":0.5, "evening":0.2}, "weight": 0}, 
-              {"from": 3, "to": 1, "distance": 550, "flow": {"morning":0.2, "noon":0.2, "evening":0.4}, "weight": 0}, 
-              {"from": 3, "to": 7, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},
-              {"from": 3, "to": 13, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0},
-              {"from": 4, "to": 7, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 4, "to": 14, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0},
-              {"from": 4, "to": 9, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0},
-              {"from": 5, "to": 1, "distance": 50, "flow": {"morning":0.2, "noon":0.2, "evening":0.2}, "weight": 0},
-              {"from": 5, "to": 10, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0},
-              {"from": 6, "to": 2, "distance": 800, "flow": {"morning":0.5, "noon":0.4, "evening":0.5}, "weight": 0}, 
-              {"from": 6, "to": 3, "distance": 800, "flow": {"morning":0.7, "noon":0.5, "evening":0.5}, "weight": 0}, 
-              {"from": 6, "to": 15, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 6, "to": 8, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},
-              {"from": 7, "to": 8, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0},
-              {"from": 7, "to": 3, "distance": 200, "flow": {"morning":0.3, "noon":0.5, "evening":0.6}, "weight": 0},  
-              {"from": 7, "to": 13, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0},
-              {"from": 7, "to": 4, "distance": 400, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0}, 
-              {"from": 8, "to": 6, "distance": 300, "flow": {"morning":0.2, "noon":0.3, "evening":0.3}, "weight": 0},  
-              {"from": 8, "to": 7, "distance": 800, "flow": {"morning":0.2, "noon":0.2, "evening":0.1}, "weight": 0}, 
-              {"from": 9, "to": 4, "distance": 250, "flow": {"morning":0.2, "noon":0.1, "evening":0.3}, "weight": 0}, 
-              {"from": 10, "to": 12, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 10, "to": 1, "distance": 150, "flow": {"morning":0.1, "noon":0.1, "evening":0.2}, "weight": 0}, 
-              {"from": 10, "to": 5, "distance": 150, "flow": {"morning":0.3, "noon":0.2, "evening":0.2}, "weight": 0}, 
-              {"from": 11, "to": 2, "distance": 600, "flow": {"morning":0.2, "noon":0.1, "evening":0.2}, "weight": 0}, 
-              {"from": 11, "to": 15, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 12, "to": 2, "distance": 100, "flow": {"morning":0.4, "noon":0.2, "evening":0.3}, "weight": 0}, 
-              {"from": 12, "to": 10, "distance": 300, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0}, 
-              {"from": 13, "to": 7, "distance": 350, "flow": {"morning":0.2, "noon":0.5, "evening":0.6}, "weight": 0}, 
-              {"from": 13, "to": 3, "distance": 400, "flow": {"morning":0.5, "noon":0.3, "evening":0.7}, "weight": 0}, 
-              {"from": 13, "to": 1, "distance": 150, "flow": {"morning":0.2, "noon":0.2, "evening":0.3}, "weight": 0},
-              {"from": 13, "to": 14, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0},
-              {"from": 14, "to": 13, "distance": 150, "flow": {"morning":0.8, "noon":0.5, "evening":0.8}, "weight": 0}, 
-              {"from": 14, "to": 4, "distance": 50, "flow": {"morning":0.4, "noon":0.4, "evening":0.5}, "weight": 0}, 
-              {"from": 15, "to": 11, "distance": 250, "flow": {"morning":0.2, "noon":0.5, "evening":0.8}, "weight": 0},  
-              {"from": 15, "to": 6, "distance": 450, "flow": {"morning":0.4, "noon":0.5, "evening":0.8}, "weight": 0}  
-            ];
-            
-            // 添加节点标记到地图
-            nodes.forEach(function(node) {
-                // 根据人流描述确定标记颜色
-                let color = '#3bb2d0'; // 默认蓝色
-                if (node.desc.includes('人流较大')) {
-                    color = '#ef4c4c'; // 红色
-                } else if (node.desc.includes('人流密集')) {
-                    color = '#ef4c4c'; // 红色
-                } else if (node.desc.includes('人流中等')) {
-                    color = '#f9886c'; // 橙色
-                }
-                
-                // 添加标记
-                new maplibregl.Marker({
-                    color: color
-                })
-                .setLngLat([node.y, node.x])
-                .setPopup(new maplibregl.Popup().setHTML(
-                    '<strong>' + node.name + '</strong><br>' +
-                    '描述: ' + node.desc + '<br>' +
-                    '编号: ' + node.id + '<br>' +
-                    '高度: ' + node.height + '米'
-                ))
+        // 时段信息条
+        const periodLabels = {
+            cost_morning: '🌅 早高峰',
+            cost_noon:    '☀️ 平峰时段',
+            cost_evening: '🌆 晚高峰'
+        };
+        document.getElementById('ri-period').textContent = periodLabels[data.period] || data.period;
+        document.getElementById('ri-nodes').textContent  = (data.pathNodes || []).length;
+        document.getElementById('ri-cost').textContent   = data.totalCost != null ? data.totalCost.toFixed(1) : '—';
+        document.getElementById('route-info').classList.add('show');
+    } catch (err) {
+        console.error(err);
+        alert('路径规划失败，请检查后端服务是否正常运行');
+    }
+}
+
+function clearRoute() {
+    if (map.getLayer('route')) { map.removeLayer('route'); map.removeSource('route'); }
+    document.getElementById('route-info').classList.remove('show');
+}
+
+async function getLocationIdByName(name) {
+    const res  = await fetch(`${API_BASE}/api/locations/search?keyword=${encodeURIComponent(name)}`);
+    const data = await res.json();
+    return data.length > 0 ? data[0].id : null;
+}
+
+// ════════════════════════════════
+//  地点详情侧边栏
+// ════════════════════════════════
+function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
+
+async function showLocationDetail(id) {
+    try {
+        const res  = await fetch(`${API_BASE}/api/locations/${id}`);
+        const data = await res.json();
+        currentSelectedLocation = data;
+
+        document.getElementById('title').innerText = data.name;
+        document.getElementById('desc').innerText  = data.description || '暂无描述';
+
+        // 照片
+        document.getElementById('photos').innerHTML =
+            (data.photos || []).map(p => `<img src="${API_BASE}${p.url}" alt="地点照片">`).join('');
+
+        // 失物招领（只展示已审核 status=1 的，后端已过滤）
+        const lfDiv = document.getElementById('lost-found');
+        lfDiv.innerHTML = (data.lost_found || []).length
+            ? data.lost_found.map(item => `
+                <div class="lost-found-card">
+                    <b>[${escHtml(item.type)}]</b> ${escHtml(item.item_name)}
+                    ${item.description ? `<p style="margin:4px 0 0;color:#555;font-size:12px">${escHtml(item.description)}</p>` : ''}
+                    ${item.contact    ? `<p style="margin:4px 0 0;color:#888;font-size:12px">📞 ${escHtml(item.contact)}</p>` : ''}
+                </div>`).join('')
+            : '<p style="font-size:12px;color:#999">暂无失物招领信息</p>';
+
+        // 评价（只展示已审核 status=1 的）
+        const revDiv = document.getElementById('reviews');
+        revDiv.innerHTML = (data.reviews || []).length
+            ? data.reviews.map(r => `
+                <div class="review-card">
+                    <div class="reviewer">
+                        ${escHtml(r.user_nickname || '匿名同学')}
+                        <span class="stars">${'⭐'.repeat(Math.min(r.rating || 0, 5))}</span>
+                    </div>
+                    <div style="margin-top:4px;color:#555">${escHtml(r.comment)}</div>
+                </div>`).join('')
+            : '<p style="font-size:12px;color:#999">暂无评价，快来第一个评价吧！</p>';
+
+        document.getElementById('sidebar').classList.add('active');
+    } catch (err) {
+        console.error('获取详情失败:', err);
+    }
+}
+
+// ════════════════════════════════
+//  功能3：用户投稿
+// ════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function openReviewModal() {
+    if (!currentSelectedLocation) return alert('请先点击地图上的地点');
+    document.getElementById('review-location-name').textContent = `地点：${currentSelectedLocation.name}`;
+    document.getElementById('review-nickname').value = '';
+    document.getElementById('review-rating').value   = '5';
+    document.getElementById('review-comment').value  = '';
+    openModal('review-modal');
+}
+
+async function submitReview() {
+    const comment = document.getElementById('review-comment').value.trim();
+    if (!comment) return alert('请填写评价内容');
+    const payload = {
+        location_id:   currentSelectedLocation.id,
+        user_nickname: document.getElementById('review-nickname').value.trim() || '匿名同学',
+        rating:        parseInt(document.getElementById('review-rating').value),
+        comment
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/reviews`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert(data.message || '提交成功！等待管理员审核后公开显示');
+        closeModal('review-modal');
+    } catch (_) { alert('提交失败，请稍后重试'); }
+}
+
+function openLostFoundModal() {
+    if (!currentSelectedLocation) return alert('请先点击地图上的地点');
+    document.getElementById('lf-location-name').textContent = `地点：${currentSelectedLocation.name}`;
+    document.getElementById('lf-type').value    = '失物';
+    document.getElementById('lf-item').value    = '';
+    document.getElementById('lf-desc').value    = '';
+    document.getElementById('lf-contact').value = '';
+    openModal('lf-modal');
+}
+
+async function submitLostFound() {
+    const item_name = document.getElementById('lf-item').value.trim();
+    if (!item_name) return alert('请填写物品名称');
+    const payload = {
+        location_id:  currentSelectedLocation.id,
+        type:         document.getElementById('lf-type').value,
+        item_name,
+        description:  document.getElementById('lf-desc').value.trim(),
+        contact:      document.getElementById('lf-contact').value.trim()
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/lost-found`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert(data.message || '发布成功！等待管理员审核后公开显示');
+        closeModal('lf-modal');
+    } catch (_) { alert('发布失败，请稍后重试'); }
+}
+
+// ════════════════════════════════
+//  功能4：管理员后台
+// ════════════════════════════════
+function toggleAdminPanel() {
+    document.getElementById('admin-panel').classList.toggle('active');
+}
+
+async function adminLogin() {
+    const token = document.getElementById('admin-token-input').value.trim();
+    if (!token) { document.getElementById('admin-login-msg').textContent = '请输入密钥'; return; }
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/pending`, {
+            headers: { 'x-admin-token': token }
+        });
+        if (res.status === 403) {
+            document.getElementById('admin-login-msg').textContent = '❌ 密钥错误，请重试';
+            return;
+        }
+        adminToken = token;
+        document.getElementById('admin-login-section').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+        const data = await res.json();
+        renderPendingContent(data);
+        // 登录后立即填充已发布内容的地点选择器
+        populatePublishedLocSelect();
+    } catch (err) {
+        document.getElementById('admin-login-msg').textContent = '连接失败，请确认后端服务已启动';
+    }
+}
+
+async function reloadAdminData() {
+    if (!adminToken) return;
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/pending`, { headers: { 'x-admin-token': adminToken } });
+        const data = await res.json();
+        renderPendingContent(data);
+    } catch (_) { alert('刷新失败'); }
+}
+
+function renderPendingContent(data) {
+    const reviews = data.pending_reviews    || [];
+    const lfs     = data.pending_lost_found || [];
+
+    document.getElementById('review-count').textContent = reviews.length;
+    document.getElementById('pending-reviews').innerHTML = reviews.length
+        ? reviews.map(r => `
+            <div class="pending-card" id="pr-${r.id}">
+                <div class="meta">地点ID: ${r.location_id} | 评分: ${'⭐'.repeat(r.rating || 0)}</div>
+                <b>${escHtml(r.user_nickname || '匿名')}</b>：${escHtml(r.comment)}
+                <div class="actions">
+                    <button class="btn-approve" onclick="adminApprove('reviews',${r.id})">✓ 通过</button>
+                    <button class="btn-reject"  onclick="adminDelete('reviews',${r.id})">✗ 删除</button>
+                </div>
+            </div>`).join('')
+        : '<p style="font-size:12px;color:#999">✅ 暂无待审核评价</p>';
+
+    document.getElementById('lf-count').textContent = lfs.length;
+    document.getElementById('pending-lf').innerHTML = lfs.length
+        ? lfs.map(lf => `
+            <div class="pending-card" id="plf-${lf.id}">
+                <div class="meta">地点ID: ${lf.location_id} | 类型: ${escHtml(lf.type)}</div>
+                <b>${escHtml(lf.item_name)}</b>
+                ${lf.description ? ` — ${escHtml(lf.description)}` : ''}
+                ${lf.contact ? `<div style="font-size:12px;color:#888;margin-top:3px">📞 ${escHtml(lf.contact)}</div>` : ''}
+                <div class="actions">
+                    <button class="btn-approve" onclick="adminApprove('lost-found',${lf.id})">✓ 通过</button>
+                    <button class="btn-reject"  onclick="adminDelete('lost-found',${lf.id})">✗ 删除</button>
+                </div>
+            </div>`).join('')
+        : '<p style="font-size:12px;color:#999">✅ 暂无待审核失物招领</p>';
+}
+
+async function adminApprove(type, id) {
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/approve/${type}/${id}`, {
+            method: 'PATCH', headers: { 'x-admin-token': adminToken }
+        });
+        if (res.ok) {
+            const cardId = type === 'reviews' ? `pr-${id}` : `plf-${id}`;
+            document.getElementById(cardId)?.remove();
+            updateAdminCounts();
+        }
+    } catch (_) { alert('操作失败'); }
+}
+
+async function adminDelete(type, id) {
+    if (!confirm('确认删除这条记录？此操作不可撤销。')) return;
+    const url = type === 'reviews'
+        ? `${API_BASE}/api/admin/reviews/${id}`
+        : `${API_BASE}/api/admin/lost-found/${id}`;
+    try {
+        const res = await fetch(url, { method: 'DELETE', headers: { 'x-admin-token': adminToken } });
+        if (res.ok) {
+            const cardId = type === 'reviews' ? `pr-${id}` : `plf-${id}`;
+            document.getElementById(cardId)?.remove();
+            updateAdminCounts();
+        }
+    } catch (_) { alert('删除失败'); }
+}
+
+function updateAdminCounts() {
+    document.getElementById('review-count').textContent = document.querySelectorAll('[id^="pr-"]').length;
+    document.getElementById('lf-count').textContent     = document.querySelectorAll('[id^="plf-"]').length;
+}
+
+// ════════════════════════════════
+//  地图初始化：加载所有点位
+// ════════════════════════════════
+map.on('load', async () => {
+    try {
+        const res       = await fetch(`${API_BASE}/api/map/buildings`);
+        const buildings = await res.json();
+        allLocations    = buildings; // 缓存，供搜索下拉直接使用
+
+        buildings.forEach(b => {
+            const el = document.createElement('div');
+            Object.assign(el.style, {
+                width: '12px', height: '12px', backgroundColor: '#ef4c4c',
+                borderRadius: '50%', cursor: 'pointer',
+                border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
+            });
+            new maplibregl.Marker(el)
+                .setLngLat([parseFloat(b.longitude), parseFloat(b.latitude)])
                 .addTo(map);
-                
-                // 添加表示高度的圆圈
-                map.addSource('circle-' + node.id, {
-                    'type': 'geojson',
-                    'data': {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': [node.y, node.x]
-                        }
-                    }
-                });
-                
-                const radius = Math.max(node.height / 5, 5);
-                
-                map.addLayer({
-                    'id': 'circle-' + node.id,
-                    'type': 'circle',
-                    'source': 'circle-' + node.id,
-                    'paint': {
-                        'circle-radius': radius,
-                        'circle-color': 'purple',
-                        'circle-opacity': 0.3,
-                        'circle-stroke-width': 1,
-                        'circle-stroke-color': 'purple'
-                    }
-                });
-            });
-            
-            // 添加连线到地图
-            edges.forEach(function(edge, index) {
-                // 找到起点和终点的坐标
-                const fromNode = nodes.find(n => n.id === edge.from);
-                const toNode = nodes.find(n => n.id === edge.to);
-                
-                if (fromNode && toNode) {
-                    // 计算平均流量以确定线条颜色
-                    const flowValues = Object.values(edge.flow);
-                    const avgFlow = flowValues.reduce((a, b) => a + b, 0) / flowValues.length;
-                    
-                    // 根据流量确定颜色和宽度
-                    let color = '#3bb2d0'; // 蓝色
-                    let width = 2;
-                    if (avgFlow >= 0.4) {
-                        color = '#ef4c4c'; // 红色
-                        width = 4;
-                    } else if (avgFlow >= 0.2) {
-                        color = '#f9886c'; // 橙色
-                        width = 3;
-                    }
-                    
-                    // 添加线的GeoJSON源
-                    map.addSource('line-' + index, {
-                        'type': 'geojson',
-                        'data': {
-                            'type': 'Feature',
-                            'properties': {
-                                'from': edge.from,
-                                'to': edge.to,
-                                'distance': edge.distance,
-                                'morning': edge.flow.morning,
-                                'noon': edge.flow.noon,
-                                'evening': edge.flow.evening
-                            },
-                            'geometry': {
-                                'type': 'LineString',
-                                'coordinates': [
-                                    [fromNode.y, fromNode.x],
-                                    [toNode.y, toNode.x]
-                                ]
-                            }
-                        }
-                    });
-                    
-                    // 添加线图层
-                    map.addLayer({
-                        'id': 'line-' + index,
-                        'type': 'line',
-                        'source': 'line-' + index,
-                        'layout': {
-                            'line-join': 'round',
-                            'line-cap': 'round'
-                        },
-                        'paint': {
-                            'line-color': color,
-                            'line-width': width,
-                            'line-opacity': 0.7
-                        }
-                    });
-                    
-                    // 为线添加弹出窗口
-                    map.on('click', 'line-' + index, function(e) {
-                        const properties = e.features[0].properties;
-                        new maplibregl.Popup()
-                            .setLngLat(e.lngLat)
-                            .setHTML(
-                                '<strong>路径信息</strong><br>' +
-                                '起点编号: ' + properties.from + '<br>' +
-                                '终点编号: ' + properties.to + '<br>' +
-                                '距离: ' + properties.distance + '米<br>' +
-                                '早晨流量: ' + properties.morning + '<br>' +
-                                '中午流量: ' + properties.noon + '<br>' +
-                                '傍晚流量: ' + properties.evening
-                            )
-                            .addTo(map);
-                    });
-                    
-                    // 改变鼠标悬停时的光标
-                    map.on('mouseenter', 'line-' + index, function () {
-                        map.getCanvas().style.cursor = 'pointer';
-                    });
-                    map.on('mouseleave', 'line-' + index, function () {
-                        map.getCanvas().style.cursor = '';
-                    });
-                }
-            });
+            el.addEventListener('click', () => showLocationDetail(b.id));
         });
-    </script>
+    } catch (err) {
+        console.error('加载点位失败:', err);
+    }
+});
+
+// ════════════════════════════════
+//  工具：HTML 转义（防 XSS）
+// ════════════════════════════════
+function escHtml(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+    return String(s ?? '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ════════════════════════════════
+//  管理员面板：Tab 切换
+// ════════════════════════════════
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).style.display = 'block';
+    btn.classList.add('active');
+
+    // 按需懒加载
+    if (tabId === 'tab-location') populateAdminLocSelect();
+    if (tabId === 'tab-photo')    populatePhotoSelects();
+    if (tabId === 'tab-edge')     loadEdges();
+}
+
+// ════════════════════════════════
+//  地点管理
+// ════════════════════════════════
+function populateAdminLocSelect() {
+    const sel = document.getElementById('admin-loc-select');
+    sel.innerHTML = '<option value="">— 选择地点 —</option>'
+        + allLocations.map(l => `<option value="${l.id}">${escHtml(l.name)} (ID:${l.id})</option>`).join('');
+}
+
+function onAdminLocSelect() {
+    const id = parseInt(document.getElementById('admin-loc-select').value);
+    const form = document.getElementById('admin-loc-edit-form');
+    if (!id) { form.style.display = 'none'; return; }
+    const loc = allLocations.find(l => l.id === id);
+    if (!loc) return;
+    document.getElementById('edit-loc-name').value     = loc.name || '';
+    document.getElementById('edit-loc-desc').value     = loc.description || '';
+    document.getElementById('edit-loc-category').value = loc.category || '';
+    document.getElementById('edit-loc-lng').value      = loc.longitude || '';
+    document.getElementById('edit-loc-lat').value      = loc.latitude || '';
+    document.getElementById('edit-loc-height').value   = loc.height || '';
+    form.style.display = 'block';
+}
+
+async function saveLocEdit() {
+    const id = parseInt(document.getElementById('admin-loc-select').value);
+    if (!id) return;
+    const payload = {
+        name:        document.getElementById('edit-loc-name').value.trim(),
+        description: document.getElementById('edit-loc-desc').value.trim(),
+        category:    document.getElementById('edit-loc-category').value.trim(),
+        longitude:   parseFloat(document.getElementById('edit-loc-lng').value),
+        latitude:    parseFloat(document.getElementById('edit-loc-lat').value),
+        height:      parseFloat(document.getElementById('edit-loc-height').value) || 0
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/locations/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert(data.message || '保存成功');
+        // 刷新本地缓存
+        const idx = allLocations.findIndex(l => l.id === id);
+        if (idx >= 0) allLocations[idx] = { ...allLocations[idx], ...payload };
+    } catch (_) { alert('保存失败'); }
+}
+
+async function createLocation() {
+    const name = document.getElementById('new-loc-name').value.trim();
+    const lng  = parseFloat(document.getElementById('new-loc-lng').value);
+    const lat  = parseFloat(document.getElementById('new-loc-lat').value);
+    if (!name || isNaN(lng) || isNaN(lat)) return alert('名称、经度、纬度为必填项');
+
+    const payload = {
+        name,
+        longitude:   lng,
+        latitude:    lat,
+        height:      parseFloat(document.getElementById('new-loc-height').value) || 10,
+        description: document.getElementById('new-loc-desc').value.trim(),
+        category:    document.getElementById('new-loc-category').value.trim()
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/locations`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data.error || '新增失败');
+        alert(data.message);
+        // 追加到本地缓存并刷新地图marker
+        allLocations.push(data.location);
+        addMarkerToMap(data.location);
+        // 清空表单
+        ['new-loc-name','new-loc-desc','new-loc-category','new-loc-lng','new-loc-lat'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('new-loc-height').value = '10';
+        populateAdminLocSelect();
+    } catch (_) { alert('新增失败'); }
+}
+
+function addMarkerToMap(b) {
+    const el = document.createElement('div');
+    Object.assign(el.style, {
+        width: '12px', height: '12px', backgroundColor: '#ef4c4c',
+        borderRadius: '50%', cursor: 'pointer',
+        border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
+    });
+    new maplibregl.Marker(el)
+        .setLngLat([parseFloat(b.longitude), parseFloat(b.latitude)])
+        .addTo(map);
+    el.addEventListener('click', () => showLocationDetail(b.id));
+    map.flyTo({ center: [parseFloat(b.longitude), parseFloat(b.latitude)], zoom: 17 });
+}
+
+async function deleteLocation() {
+    const id = parseInt(document.getElementById('admin-loc-select').value);
+    if (!id) return;
+    const loc = allLocations.find(l => l.id === id);
+    if (!confirm(`确认删除「${loc?.name}」？此操作将同时删除其所有照片、评价、失物招领及关联路径，不可撤销！`)) return;
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/locations/${id}`, {
+            method: 'DELETE', headers: { 'x-admin-token': adminToken }
+        });
+        const data = await res.json();
+        alert(data.message || '已删除');
+        allLocations = allLocations.filter(l => l.id !== id);
+        document.getElementById('admin-loc-select').value = '';
+        document.getElementById('admin-loc-edit-form').style.display = 'none';
+        populateAdminLocSelect();
+        // 提示用户刷新页面重建markers
+        alert('地点已删除，请刷新页面以更新地图标记');
+    } catch (_) { alert('删除失败'); }
+}
+
+// ════════════════════════════════
+//  照片管理
+// ════════════════════════════════
+function populatePhotoSelects() {
+    const opts = '<option value="">— 选择地点 —</option>'
+        + allLocations.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+    document.getElementById('photo-loc-select').innerHTML    = opts;
+    document.getElementById('photo-manage-select').innerHTML = opts;
+}
+
+async function uploadPhotos() {
+    const locationId = document.getElementById('photo-loc-select').value;
+    const files      = document.getElementById('photo-file-input').files;
+    if (!locationId) return alert('请选择地点');
+    if (!files.length) return alert('请选择图片文件');
+
+    const progress = document.getElementById('upload-progress');
+    progress.style.display = 'block';
+    let ok = 0;
+    for (const file of files) {
+        const fd = new FormData();
+        fd.append('image', file);
+        try {
+            const res = await fetch(`${API_BASE}/api/admin/locations/${locationId}/photo`, {
+                method: 'POST', headers: { 'x-admin-token': adminToken }, body: fd
+            });
+            if (res.ok) ok++;
+        } catch (_) {}
+    }
+    progress.style.display = 'none';
+    alert(`上传完成：${ok}/${files.length} 张成功`);
+    document.getElementById('photo-file-input').value = '';
+}
+
+async function loadLocationPhotos() {
+    const locationId = document.getElementById('photo-manage-select').value;
+    const grid = document.getElementById('photo-manage-grid');
+    if (!locationId) { grid.innerHTML = ''; return; }
+    try {
+        const res  = await fetch(`${API_BASE}/api/locations/${locationId}`);
+        const data = await res.json();
+        const photos = data.photos || [];
+        if (!photos.length) { grid.innerHTML = '<p style="font-size:12px;color:#999;grid-column:span 2">该地点暂无照片</p>'; return; }
+        grid.innerHTML = photos.map(p => `
+            <div class="photo-manage-item">
+                <img src="${API_BASE}${p.url}" alt="照片">
+                <button class="photo-del-btn" onclick="deletePhoto(${p.id}, this)">✕</button>
+            </div>`).join('');
+    } catch (_) { grid.innerHTML = '<p style="font-size:12px;color:#e74c3c">加载失败</p>'; }
+}
+
+async function deletePhoto(photoId, btn) {
+    if (!confirm('确认删除这张照片？')) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/photos/${photoId}`, {
+            method: 'DELETE', headers: { 'x-admin-token': adminToken }
+        });
+        if (res.ok) btn.closest('.photo-manage-item').remove();
+        else alert('删除失败');
+    } catch (_) { alert('删除失败'); }
+}
+
+// ════════════════════════════════
+//  路网（边）管理
+// ════════════════════════════════
+async function loadEdges() {
+    const container = document.getElementById('edge-list');
+    container.innerHTML = '<p style="font-size:12px;color:#999">加载中...</p>';
+    try {
+        const res   = await fetch(`${API_BASE}/api/admin/edges`, { headers: { 'x-admin-token': adminToken } });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            container.innerHTML = `<p style="font-size:12px;color:#e74c3c">加载失败：${escHtml(err.error || res.statusText)}</p>`;
+            return;
+        }
+        const edges = await res.json();
+        if (!edges.length) { container.innerHTML = '<p style="font-size:12px;color:#999">暂无边数据</p>'; return; }
+        // 用 src:tgt 作为唯一键（兼容edges表无id列的情况；有id列时后端也返回id，但我们统一用src:tgt避免歧义）
+        container.innerHTML = edges.map(e => {
+            const edgeKey = `${e.source_node}:${e.target_node}`;
+            return `
+            <div class="edge-card" id="edge-${edgeKey}">
+                <div class="edge-title">
+                    ${escHtml(e.source_name)} (${e.source_node})
+                    → ${escHtml(e.target_name)} (${e.target_node})
+                </div>
+                <div class="edge-costs">
+                    🌅 早:${e.cost_morning} &nbsp; ☀️ 平:${e.cost_noon} &nbsp; 🌆 晚:${e.cost_evening}
+                </div>
+                <div class="actions">
+                    <button class="btn-sm btn-sm-blue" onclick="openEdgeEdit('${edgeKey}',${e.cost_morning},${e.cost_noon},${e.cost_evening})">✏️ 编辑</button>
+                    <button class="btn-sm btn-sm-red"  onclick="deleteEdge('${edgeKey}')">🗑 删除</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<p style="font-size:12px;color:#e74c3c">加载失败，请检查后端服务</p>';
+    }
+}
+
+function openEdgeEdit(edgeKey, m, n, ev) {
+    const nm = prompt(`编辑边 ${edgeKey}\n早高峰权重（当前 ${m}，值越大越拥挤）：`, m);
+    if (nm === null) return;
+    const nn = prompt(`平峰权重（当前 ${n}）：`, n);
+    if (nn === null) return;
+    const ne = prompt(`晚高峰权重（当前 ${ev}）：`, ev);
+    if (ne === null) return;
+    updateEdge(edgeKey, parseFloat(nm), parseFloat(nn), parseFloat(ne));
+}
+
+async function updateEdge(edgeKey, cost_morning, cost_noon, cost_evening) {
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${edgeKey}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify({ cost_morning, cost_noon, cost_evening })
+        });
+        const data = await res.json();
+        alert(data.message || '更新成功');
+        loadEdges();
+    } catch (_) { alert('更新失败'); }
+}
+
+async function createEdge() {
+    const src = parseInt(document.getElementById('new-edge-src').value);
+    const tgt = parseInt(document.getElementById('new-edge-tgt').value);
+    if (isNaN(src) || isNaN(tgt)) return alert('请填写有效的起点和终点 ID');
+    const payload = {
+        source_node:  src,
+        target_node:  tgt,
+        cost_morning: parseFloat(document.getElementById('new-edge-morning').value) || 1,
+        cost_noon:    parseFloat(document.getElementById('new-edge-noon').value)    || 1,
+        cost_evening: parseFloat(document.getElementById('new-edge-evening').value) || 1
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/edges`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data.error || '新增失败');
+        alert(data.message);
+        ['new-edge-src','new-edge-tgt'].forEach(id => document.getElementById(id).value = '');
+        ['new-edge-morning','new-edge-noon','new-edge-evening'].forEach(id => document.getElementById(id).value = '1');
+        loadEdges();
+    } catch (_) { alert('新增失败'); }
+}
+
+async function deleteEdge(edgeKey) {
+    if (!confirm(`确认删除路径 ${edgeKey}？`)) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${edgeKey}`, {
+            method: 'DELETE', headers: { 'x-admin-token': adminToken }
+        });
+        if (res.ok) { document.getElementById(`edge-${edgeKey}`)?.remove(); }
+        else {
+            const data = await res.json().catch(() => ({}));
+            alert('删除失败：' + (data.error || res.statusText));
+        }
+    } catch (_) { alert('删除失败'); }
+}
+
+
+// ════════════════════════════════
+//  已发布内容管理（Bug1）
+// ════════════════════════════════
+function populatePublishedLocSelect() {
+    const sel = document.getElementById('published-loc-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— 选择地点 —</option>'
+        + allLocations.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+}
+
+async function loadPublishedContent() {
+    const id = document.getElementById('published-loc-select').value;
+    if (!id) return alert('请先选择地点');
+
+    const rSection  = document.getElementById('published-reviews-section');
+    const lfSection = document.getElementById('published-lf-section');
+    rSection.style.display = 'none';
+    lfSection.style.display = 'none';
+
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/location/${id}/published`, {
+            headers: { 'x-admin-token': adminToken }
+        });
+        const data = await res.json();
+
+        // 已发布评价
+        const reviews = data.reviews || [];
+        document.getElementById('published-reviews').innerHTML = reviews.length
+            ? reviews.map(r => `
+                <div class="pending-card" id="pub-r-${r.id}">
+                    <div class="meta">${'⭐'.repeat(r.rating||0)} | ${escHtml(r.user_nickname||'匿名')}</div>
+                    ${escHtml(r.comment)}
+                    <div class="actions">
+                        <button class="btn-reject" onclick="adminDeletePublished('reviews',${r.id})">🗑 删除</button>
+                    </div>
+                </div>`).join('')
+            : '<p style="font-size:12px;color:#999">该地点暂无已发布评价</p>';
+        rSection.style.display = 'block';
+
+        // 已发布失物招领
+        const lfs = data.lost_found || [];
+        document.getElementById('published-lf').innerHTML = lfs.length
+            ? lfs.map(lf => `
+                <div class="pending-card" id="pub-lf-${lf.id}">
+                    <div class="meta">[${escHtml(lf.type)}] ${escHtml(lf.item_name)}</div>
+                    ${lf.description ? escHtml(lf.description) : ''}
+                    ${lf.contact ? `<div style="font-size:11px;color:#888">📞 ${escHtml(lf.contact)}</div>` : ''}
+                    <div class="actions">
+                        <button class="btn-reject" onclick="adminDeletePublished('lost-found',${lf.id})">🗑 删除</button>
+                    </div>
+                </div>`).join('')
+            : '<p style="font-size:12px;color:#999">该地点暂无已发布失物招领</p>';
+        lfSection.style.display = 'block';
+    } catch (_) { alert('查询失败，请检查后端服务'); }
+}
+
+async function adminDeletePublished(type, id) {
+    if (!confirm('确认删除这条已发布内容？')) return;
+    const url = type === 'reviews'
+        ? `${API_BASE}/api/admin/reviews/${id}`
+        : `${API_BASE}/api/admin/lost-found/${id}`;
+    try {
+        const res = await fetch(url, { method: 'DELETE', headers: { 'x-admin-token': adminToken } });
+        if (res.ok) {
+            const prefix = type === 'reviews' ? 'pub-r' : 'pub-lf';
+            document.getElementById(`${prefix}-${id}`)?.remove();
+        } else {
+            alert('删除失败');
+        }
+    } catch (_) { alert('删除失败'); }
+}
+
+</script>
 </body>
 </html>
