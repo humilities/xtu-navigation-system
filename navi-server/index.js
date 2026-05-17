@@ -197,6 +197,7 @@ app.get('/api/admin/pending', adminAuth, async (req, res) => {
     }
 });
 
+
 // 通用一键审核通过
 app.patch('/api/admin/approve/:type/:id', adminAuth, async (req, res) => {
     const { type, id } = req.params;
