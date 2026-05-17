@@ -29,11 +29,9 @@ app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 2. 【核心新增】托管整个前端静态资源 (index.html, css, js, assets 等)
 // 因为你的 index.js 在 navi-server 里，而 index.html 在根目录，所以用 '..' 向上跳一级
 app.use(express.static(path.join(__dirname, '../3d')));
 
-// 3. 【核心新增】显式定义根路径路由，确保访问 localhost:3000 直接显示地图
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
@@ -49,9 +47,7 @@ const adminAuth = (req, res, next) => {
     }
 };
 
-// ==========================================
-// 1. 公共接口 (所有人可用)
-// ==========================================
+// 1. 公共接口 
 
 // 获取所有建筑 (用于 Mapbox 渲染)
 app.get('/api/map/buildings', async (req, res) => {
@@ -159,9 +155,7 @@ app.get('/api/map/edges', async (req, res) => {
     }
 });
 
-// ==========================================
 // 2. 用户投稿接口 (所有人可用，默认 status=0)
-// ==========================================
 
 app.post('/api/reviews', async (req, res) => {
     const { location_id, user_nickname, rating, comment } = req.body;
@@ -190,9 +184,7 @@ app.post('/api/lost-found', async (req, res) => {
     }
 });
 
-// ==========================================
 // 3. 管理员接口 (需要 adminAuth 验证)
-// ==========================================
 
 // 获取所有待审核内容
 app.get('/api/admin/pending', adminAuth, async (req, res) => {
@@ -369,6 +361,15 @@ app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
     }
 });
 
+// 删除边
+app.delete('/api/admin/edges/:id', adminAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM edges WHERE id = $1', [req.params.id]);
+        res.json({ message: '边已删除' });
+    } catch (err) {
+        res.status(500).json({ error: '删除失败' });
+    }
+});
 
 // --- 启动服务器 ---
 const PORT = 3000;
