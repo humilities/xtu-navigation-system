@@ -65,7 +65,7 @@
             display: none;
         }
         #route-info.show { display: flex; }
-        #route-info span { font-weight: bold; color: #2ecc71; }
+        #route-info span { font-weight: bold; color: #e65c95; }
 
         /* ── 侧边栏 ── */
         .sidebar {
@@ -176,6 +176,198 @@
 
         /* ── 地点选择器 ── */
         #admin-loc-select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; margin-bottom: 10px; }
+    </style>
+<style>
+        :root {
+            --pink-panel: rgba(255, 238, 246, 0.96);
+            --pink-panel-soft: rgba(255, 247, 251, 0.98);
+            --pink-panel-strong: #ffd7e8;
+            --pink-border: #f1aac6;
+            --pink-text: #6f2245;
+            --pink-text-soft: #9a5b7d;
+            --pink-accent: #e65c95;
+            --pink-accent-hover: #d94a87;
+            --pink-shadow: 0 8px 24px rgba(188, 77, 126, 0.18);
+        }
+
+        body { color: var(--pink-text); }
+        .search-box,
+        .nav-panel,
+        #route-info,
+        .sidebar,
+        .modal,
+        .admin-section,
+        .pending-card,
+        .edge-card,
+        .admin-tab,
+        .review-card {
+            background: var(--pink-panel-soft);
+            color: var(--pink-text);
+            border-color: var(--pink-border);
+            box-shadow: var(--pink-shadow);
+        }
+
+        .search-box,
+        .nav-panel,
+        #route-info,
+        .modal,
+        .admin-section {
+            border: 1px solid var(--pink-border);
+        }
+
+        #search-suggestions {
+            background: var(--pink-panel-soft);
+            border: 1px solid var(--pink-border);
+            box-shadow: var(--pink-shadow);
+        }
+
+        .suggestion-item {
+            border-bottom-color: var(--pink-border);
+            color: var(--pink-text);
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: #ffe3ef;
+        }
+
+        .cat-tag {
+            color: var(--pink-accent);
+            background: var(--pink-panel-strong);
+        }
+
+        .search-box input,
+        .nav-panel input,
+        .modal input,
+        .modal textarea,
+        .modal select,
+        .admin-login input,
+        .admin-form input,
+        .admin-form textarea,
+        .admin-form select,
+        #admin-loc-select,
+        #published-loc-select,
+        #photo-loc-select,
+        #photo-manage-select {
+            background: #fff8fb !important;
+            color: var(--pink-text) !important;
+            border: 1px solid var(--pink-border) !important;
+        }
+
+        .search-box input::placeholder,
+        .nav-panel input::placeholder,
+        .modal input::placeholder,
+        .modal textarea::placeholder,
+        .admin-login input::placeholder,
+        .admin-form input::placeholder,
+        .admin-form textarea::placeholder {
+            color: var(--pink-text-soft);
+        }
+
+        .nav-panel label,
+        .modal label,
+        .admin-form label,
+        #desc,
+        .pending-card .meta,
+        .edge-card .edge-costs,
+        .admin-tab {
+            color: var(--pink-text-soft) !important;
+        }
+
+        .review-card .reviewer,
+        .edge-card .edge-title,
+        #admin-panel h2,
+        .admin-section h4 {
+            color: var(--pink-text) !important;
+        }
+
+        .search-box button,
+        .btn-submit,
+        .btn-sm-blue,
+        button[onclick="getRoute()"],
+        button[onclick="loadPublishedContent()"] {
+            background: var(--pink-accent) !important;
+            color: #fff !important;
+        }
+
+        .search-box button:hover,
+        .btn-submit:hover {
+            background: var(--pink-accent-hover) !important;
+        }
+
+        .btn-action,
+        .btn-nav-set,
+        button[onclick="toggleNavPanel()"],
+        button[onclick="clearRoute()"],
+        button[onclick="reloadAdminData()"],
+        button[onclick="loadEdges()"] {
+            background: #fff0f6 !important;
+            color: var(--pink-accent) !important;
+            border: 1px solid var(--pink-border) !important;
+            box-shadow: var(--pink-shadow);
+        }
+
+        .btn-action:hover,
+        .btn-nav-set:hover,
+        button[onclick="toggleNavPanel()"]:hover,
+        button[onclick="clearRoute()"]:hover,
+        button[onclick="reloadAdminData()"]:hover,
+        button[onclick="loadEdges()"]:hover {
+            background: var(--pink-accent) !important;
+            color: #fff !important;
+        }
+
+        .btn-cancel {
+            background: #f8d9e6;
+            color: var(--pink-text);
+        }
+
+        .sidebar {
+            background: var(--pink-panel);
+            border-left: 1px solid var(--pink-border);
+            box-shadow: -8px 0 24px rgba(188, 77, 126, 0.14);
+        }
+
+        #admin-panel {
+            background: #ffeaf2;
+            border-right: 1px solid var(--pink-border);
+            box-shadow: 2px 0 18px rgba(188, 77, 126, 0.2);
+        }
+
+        #admin-btn,
+        .admin-tab.active {
+            background: #a83467 !important;
+            color: #fff !important;
+            border-color: #a83467 !important;
+        }
+
+        #route-info span {
+            color: var(--pink-accent);
+        }
+
+        #period-badge.morning,
+        #period-badge.noon,
+        #period-badge.evening,
+        .lost-found-card,
+        .badge-review,
+        .badge-lf {
+            background: #ffe3ef !important;
+            color: #932f60 !important;
+        }
+
+        .lost-found-card {
+            border-left-color: var(--pink-accent);
+        }
+
+        hr,
+        .admin-section h4 {
+            border-color: var(--pink-border);
+        }
+
+        .close-btn,
+        .close-modal {
+            color: var(--pink-text-soft);
+        }
     </style>
 </head>
 <body>
@@ -480,7 +672,7 @@
 // ════════════════════════════════
 const map = new maplibregl.Map({
     container: 'map',
-    style: 'https://api.maptiler.com/maps/streets/style.json?key=olZ4jftvJ5YGC8IM7Sno',
+    style: 'https://api.maptiler.com/maps/019e311f-2d66-7a0c-9a2f-b18ea652e610/style.json?key=olZ4jftvJ5YGC8IM7Sno',
     center: [112.857, 27.882],
     zoom: 16
 });
@@ -662,7 +854,7 @@ async function getRoute() {
         map.addLayer({
             id: 'route', type: 'line', source: 'route',
             layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: { 'line-color': '#2ecc71', 'line-width': 6, 'line-opacity': 0.85 }
+            paint: { 'line-color': '#e65c95', 'line-width': 6, 'line-opacity': 0.85 }
         });
 
         const bounds = data.coordinates.reduce(
@@ -1186,19 +1378,49 @@ async function loadEdges() {
     }
 }
 
+// ════ 编辑边：内联表单，规避edgeKey含':'被路由截断的bug ════
 function openEdgeEdit(edgeKey, m, n, ev) {
-    const nm = prompt(`编辑边 ${edgeKey}\n早高峰权重（当前 ${m}，值越大越拥挤）：`, m);
-    if (nm === null) return;
-    const nn = prompt(`平峰权重（当前 ${n}）：`, n);
-    if (nn === null) return;
-    const ne = prompt(`晚高峰权重（当前 ${ev}）：`, ev);
-    if (ne === null) return;
-    updateEdge(edgeKey, parseFloat(nm), parseFloat(nn), parseFloat(ne));
+    // 找到对应的edge-card，替换为内联编辑表单
+    const card = document.getElementById(`edge-${edgeKey}`);
+    if (!card) return;
+    card.innerHTML = `
+        <div class="edge-title" style="margin-bottom:8px">✏️ 编辑权重：${edgeKey}</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+            <div style="flex:1">
+                <div style="font-size:11px;color:#888;margin-bottom:3px">🌅 早高峰</div>
+                <input id="edit-m-${edgeKey}" type="number" step="0.1" value="${m}"
+                       style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px;font-size:12px;box-sizing:border-box">
+            </div>
+            <div style="flex:1">
+                <div style="font-size:11px;color:#888;margin-bottom:3px">☀️ 平峰</div>
+                <input id="edit-n-${edgeKey}" type="number" step="0.1" value="${n}"
+                       style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px;font-size:12px;box-sizing:border-box">
+            </div>
+            <div style="flex:1">
+                <div style="font-size:11px;color:#888;margin-bottom:3px">🌆 晚高峰</div>
+                <input id="edit-ev-${edgeKey}" type="number" step="0.1" value="${ev}"
+                       style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px;font-size:12px;box-sizing:border-box">
+            </div>
+        </div>
+        <div style="display:flex;gap:6px">
+            <button class="btn-sm btn-sm-blue" onclick="saveEdgeEdit('${edgeKey}')" style="flex:1">💾 保存</button>
+            <button class="btn-sm" onclick="loadEdges()" style="flex:1;background:#f0f0f0;color:#555">✕ 取消</button>
+        </div>
+    `;
+}
+
+async function saveEdgeEdit(edgeKey) {
+    const flow_morning = parseFloat(document.getElementById(`edit-m-${edgeKey}`).value);
+    const flow_noon    = parseFloat(document.getElementById(`edit-n-${edgeKey}`).value);
+    const flow_evening = parseFloat(document.getElementById(`edit-ev-${edgeKey}`).value);
+    if ([flow_morning, flow_noon, flow_evening].some(isNaN)) return alert('请输入有效数字');
+    await updateEdge(edgeKey, flow_morning, flow_noon, flow_evening);
 }
 
 async function updateEdge(edgeKey, flow_morning, flow_noon, flow_evening) {
+    // edgeKey格式为 "src:tgt"，用encodeURIComponent避免':'被路由吃掉
     try {
-        const res = await fetch(`${API_BASE}/api/admin/edges/${edgeKey}`, {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${encodeURIComponent(edgeKey)}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
             body: JSON.stringify({ flow_morning, flow_noon, flow_evening })
         });
@@ -1241,7 +1463,7 @@ async function createEdge() {
 async function deleteEdge(edgeKey) {
     if (!confirm(`确认删除路径 ${edgeKey}？`)) return;
     try {
-        const res = await fetch(`${API_BASE}/api/admin/edges/${edgeKey}`, {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${encodeURIComponent(edgeKey)}`, {
             method: 'DELETE', headers: { 'x-admin-token': adminToken }
         });
         if (res.ok) { document.getElementById(`edge-${edgeKey}`)?.remove(); }

@@ -406,7 +406,7 @@ app.post('/api/admin/edges', adminAuth, async (req, res) => {
 
 // 更新边权重（兼容有/无id列；id格式同删除接口）
 app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
-    const raw = req.params.id;
+    const raw = decodeURIComponent(req.params.id); // 前端用encodeURIComponent编码了':'
     const { flow_morning, flow_noon, flow_evening } = req.body;
     try {
         let q, params;
@@ -436,7 +436,7 @@ app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
 
 // 删除边（兼容有/无id列；前端传 source_node:target_node 格式或纯id）
 app.delete('/api/admin/edges/:id', adminAuth, async (req, res) => {
-    const raw = req.params.id;
+    const raw = decodeURIComponent(req.params.id); // 前端用encodeURIComponent编码了':'
     try {
         if (raw.includes(':')) {
             // 无id列时：前端传 "srcId:tgtId"
