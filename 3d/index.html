@@ -179,6 +179,198 @@
         /* ── 地点选择器 ── */
         #admin-loc-select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; margin-bottom: 10px; }
     </style>
+    <style>
+        :root {
+            --pink-panel: rgba(255, 238, 246, 0.96);
+            --pink-panel-soft: rgba(255, 247, 251, 0.98);
+            --pink-panel-strong: #ffd7e8;
+            --pink-border: #f1aac6;
+            --pink-text: #6f2245;
+            --pink-text-soft: #9a5b7d;
+            --pink-accent: #e65c95;
+            --pink-accent-hover: #d94a87;
+            --pink-shadow: 0 8px 24px rgba(188, 77, 126, 0.18);
+        }
+
+        body { color: var(--pink-text); }
+        .search-box,
+        .nav-panel,
+        #route-info,
+        .sidebar,
+        .modal,
+        .admin-section,
+        .pending-card,
+        .edge-card,
+        .admin-tab,
+        .review-card {
+            background: var(--pink-panel-soft);
+            color: var(--pink-text);
+            border-color: var(--pink-border);
+            box-shadow: var(--pink-shadow);
+        }
+
+        .search-box,
+        .nav-panel,
+        #route-info,
+        .modal,
+        .admin-section {
+            border: 1px solid var(--pink-border);
+        }
+
+        #search-suggestions {
+            background: var(--pink-panel-soft);
+            border: 1px solid var(--pink-border);
+            box-shadow: var(--pink-shadow);
+        }
+
+        .suggestion-item {
+            border-bottom-color: var(--pink-border);
+            color: var(--pink-text);
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: #ffe3ef;
+        }
+
+        .cat-tag {
+            color: var(--pink-accent);
+            background: var(--pink-panel-strong);
+        }
+
+        .search-box input,
+        .nav-panel input,
+        .modal input,
+        .modal textarea,
+        .modal select,
+        .admin-login input,
+        .admin-form input,
+        .admin-form textarea,
+        .admin-form select,
+        #admin-loc-select,
+        #published-loc-select,
+        #photo-loc-select,
+        #photo-manage-select {
+            background: #fff8fb !important;
+            color: var(--pink-text) !important;
+            border: 1px solid var(--pink-border) !important;
+        }
+
+        .search-box input::placeholder,
+        .nav-panel input::placeholder,
+        .modal input::placeholder,
+        .modal textarea::placeholder,
+        .admin-login input::placeholder,
+        .admin-form input::placeholder,
+        .admin-form textarea::placeholder {
+            color: var(--pink-text-soft);
+        }
+
+        .nav-panel label,
+        .modal label,
+        .admin-form label,
+        #desc,
+        .pending-card .meta,
+        .edge-card .edge-costs,
+        .admin-tab {
+            color: var(--pink-text-soft) !important;
+        }
+
+        .review-card .reviewer,
+        .edge-card .edge-title,
+        #admin-panel h2,
+        .admin-section h4 {
+            color: var(--pink-text) !important;
+        }
+
+        .search-box button,
+        .btn-submit,
+        .btn-sm-blue,
+        button[onclick="getRoute()"],
+        button[onclick="loadPublishedContent()"] {
+            background: var(--pink-accent) !important;
+            color: #fff !important;
+        }
+
+        .search-box button:hover,
+        .btn-submit:hover {
+            background: var(--pink-accent-hover) !important;
+        }
+
+        .btn-action,
+        .btn-nav-set,
+        button[onclick="toggleNavPanel()"],
+        button[onclick="clearRoute()"],
+        button[onclick="reloadAdminData()"],
+        button[onclick="loadEdges()"] {
+            background: #fff0f6 !important;
+            color: var(--pink-accent) !important;
+            border: 1px solid var(--pink-border) !important;
+            box-shadow: var(--pink-shadow);
+        }
+
+        .btn-action:hover,
+        .btn-nav-set:hover,
+        button[onclick="toggleNavPanel()"]:hover,
+        button[onclick="clearRoute()"]:hover,
+        button[onclick="reloadAdminData()"]:hover,
+        button[onclick="loadEdges()"]:hover {
+            background: var(--pink-accent) !important;
+            color: #fff !important;
+        }
+
+        .btn-cancel {
+            background: #f8d9e6;
+            color: var(--pink-text);
+        }
+
+        .sidebar {
+            background: var(--pink-panel);
+            border-left: 1px solid var(--pink-border);
+            box-shadow: -8px 0 24px rgba(188, 77, 126, 0.14);
+        }
+
+        #admin-panel {
+            background: #ffeaf2;
+            border-right: 1px solid var(--pink-border);
+            box-shadow: 2px 0 18px rgba(188, 77, 126, 0.2);
+        }
+
+        #admin-btn,
+        .admin-tab.active {
+            background: #a83467 !important;
+            color: #fff !important;
+            border-color: #a83467 !important;
+        }
+
+        #route-info span {
+            color: var(--pink-accent);
+        }
+
+        #period-badge.morning,
+        #period-badge.noon,
+        #period-badge.evening,
+        .lost-found-card,
+        .badge-review,
+        .badge-lf {
+            background: #ffe3ef !important;
+            color: #932f60 !important;
+        }
+
+        .lost-found-card {
+            border-left-color: var(--pink-accent);
+        }
+
+        hr,
+        .admin-section h4 {
+            border-color: var(--pink-border);
+        }
+
+        .close-btn,
+        .close-modal {
+            color: var(--pink-text-soft);
+        }
+    </style>
 </head>
 <body>
 
