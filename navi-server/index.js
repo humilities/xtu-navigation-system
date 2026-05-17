@@ -116,9 +116,9 @@ app.get('/api/navigation/route', async (req, res) => {
 
     try {
         const hour = new Date().getHours();
-        let costField = 'cost_noon';
-        if (hour >= 6 && hour < 11) costField = 'cost_morning';
-        else if (hour >= 17 && hour < 22) costField = 'cost_evening';
+        let costField = 'flow_noon';
+        if (hour >= 6 && hour < 11) costField = 'flow_morning';
+        else if (hour >= 17 && hour < 22) costField = 'flow_evening';
 
         const { rows: edges } = await pool.query(`SELECT source_node, target_node, ${costField} as weight FROM view_bidirectional_paths`);
         const result = findShortestPath(edges, parseInt(start), parseInt(end));
@@ -146,7 +146,7 @@ app.get('/api/map/edges', async (req, res) => {
             SELECT p.source_node, p.target_node, 
                    l1.longitude as start_lng, l1.latitude as start_lat,
                    l2.longitude as end_lng, l2.latitude as end_lat,
-                   p.cost_noon as flow_weight
+                   p.flow_noon as flow_weight
             FROM view_bidirectional_paths p
             JOIN locations l1 ON p.source_node = l1.id
             JOIN locations l2 ON p.target_node = l2.id
@@ -352,24 +352,24 @@ app.get('/api/admin/edges', adminAuth, async (req, res) => {
             WHERE table_schema='public' AND table_name='edges' AND column_name='id'
         `);
         let query;
+        // edges 表有 id 列（图3数据库截图已确认）
         if (colCheck.rows.length > 0) {
-            // edges 表有 id 列（标准情况）
             query = `
                 SELECT e.id, e.source_node, e.target_node,
                        l1.name AS source_name, l2.name AS target_name,
-                       e.cost_morning, e.cost_noon, e.cost_evening
+                       e.flow_morning, e.flow_noon, e.flow_evening
                 FROM edges e
                 JOIN locations l1 ON e.source_node = l1.id
                 JOIN locations l2 ON e.target_node = l2.id
                 ORDER BY e.id ASC
             `;
         } else {
-            // edges 表无 id 列，用 ROW_NUMBER() 生成虚拟序号
+            // 无id列兜底：用 ROW_NUMBER()
             query = `
                 SELECT ROW_NUMBER() OVER (ORDER BY e.source_node, e.target_node) AS id,
                        e.source_node, e.target_node,
                        l1.name AS source_name, l2.name AS target_name,
-                       e.cost_morning, e.cost_noon, e.cost_evening
+                       e.flow_morning, e.flow_noon, e.flow_evening
                 FROM edges e
                 JOIN locations l1 ON e.source_node = l1.id
                 JOIN locations l2 ON e.target_node = l2.id
@@ -386,16 +386,16 @@ app.get('/api/admin/edges', adminAuth, async (req, res) => {
 
 // 新增边（兼容有/无id列的edges表）
 app.post('/api/admin/edges', adminAuth, async (req, res) => {
-    const { source_node, target_node, cost_morning, cost_noon, cost_evening } = req.body;
+    const { source_node, target_node, flow_morning, flow_noon, flow_evening } = req.body;
     if (!source_node || !target_node) {
         return res.status(400).json({ error: '起点ID和终点ID为必填项' });
     }
     try {
         await pool.query(
-            `INSERT INTO edges (source_node, target_node, cost_morning, cost_noon, cost_evening)
+            `INSERT INTO edges (source_node, target_node, flow_morning, flow_noon, flow_evening)
              VALUES ($1, $2, $3, $4, $5)`,
             [source_node, target_node,
-             cost_morning ?? 1, cost_noon ?? 1, cost_evening ?? 1]
+             flow_morning ?? 1, flow_noon ?? 1, flow_evening ?? 1]
         );
         res.json({ message: '边新增成功' });
     } catch (err) {
@@ -407,24 +407,24 @@ app.post('/api/admin/edges', adminAuth, async (req, res) => {
 // 更新边权重（兼容有/无id列；id格式同删除接口）
 app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
     const raw = req.params.id;
-    const { cost_morning, cost_noon, cost_evening } = req.body;
+    const { flow_morning, flow_noon, flow_evening } = req.body;
     try {
         let q, params;
         if (raw.includes(':')) {
             const [src, tgt] = raw.split(':').map(Number);
             q = `UPDATE edges SET
-                cost_morning = COALESCE($1, cost_morning),
-                cost_noon    = COALESCE($2, cost_noon),
-                cost_evening = COALESCE($3, cost_evening)
+                flow_morning = COALESCE($1, flow_morning),
+                flow_noon    = COALESCE($2, flow_noon),
+                flow_evening = COALESCE($3, flow_evening)
              WHERE source_node=$4 AND target_node=$5`;
-            params = [cost_morning, cost_noon, cost_evening, src, tgt];
+            params = [flow_morning, flow_noon, flow_evening, src, tgt];
         } else {
             q = `UPDATE edges SET
-                cost_morning = COALESCE($1, cost_morning),
-                cost_noon    = COALESCE($2, cost_noon),
-                cost_evening = COALESCE($3, cost_evening)
+                flow_morning = COALESCE($1, flow_morning),
+                flow_noon    = COALESCE($2, flow_noon),
+                flow_evening = COALESCE($3, flow_evening)
              WHERE id = $4`;
-            params = [cost_morning, cost_noon, cost_evening, parseInt(raw)];
+            params = [flow_morning, flow_noon, flow_evening, parseInt(raw)];
         }
         await pool.query(q, params);
         res.json({ message: '边权重更新成功' });
@@ -433,7 +433,6 @@ app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
         res.status(500).json({ error: '更新失败：' + err.message });
     }
 });
-
 
 // 删除边（兼容有/无id列；前端传 source_node:target_node 格式或纯id）
 app.delete('/api/admin/edges/:id', adminAuth, async (req, res) => {

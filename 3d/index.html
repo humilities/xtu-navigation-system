@@ -67,7 +67,6 @@
         }
         #route-info.show { display: flex; }
         #route-info span { font-weight: bold; color: #2ecc71; }
-        
 
         /* ── 侧边栏 ── */
         .sidebar {
@@ -178,198 +177,6 @@
 
         /* ── 地点选择器 ── */
         #admin-loc-select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; margin-bottom: 10px; }
-    </style>
-    <style>
-        :root {
-            --pink-panel: rgba(255, 238, 246, 0.96);
-            --pink-panel-soft: rgba(255, 247, 251, 0.98);
-            --pink-panel-strong: #ffd7e8;
-            --pink-border: #f1aac6;
-            --pink-text: #6f2245;
-            --pink-text-soft: #9a5b7d;
-            --pink-accent: #e65c95;
-            --pink-accent-hover: #d94a87;
-            --pink-shadow: 0 8px 24px rgba(188, 77, 126, 0.18);
-        }
-
-        body { color: var(--pink-text); }
-        .search-box,
-        .nav-panel,
-        #route-info,
-        .sidebar,
-        .modal,
-        .admin-section,
-        .pending-card,
-        .edge-card,
-        .admin-tab,
-        .review-card {
-            background: var(--pink-panel-soft);
-            color: var(--pink-text);
-            border-color: var(--pink-border);
-            box-shadow: var(--pink-shadow);
-        }
-
-        .search-box,
-        .nav-panel,
-        #route-info,
-        .modal,
-        .admin-section {
-            border: 1px solid var(--pink-border);
-        }
-
-        #search-suggestions {
-            background: var(--pink-panel-soft);
-            border: 1px solid var(--pink-border);
-            box-shadow: var(--pink-shadow);
-        }
-
-        .suggestion-item {
-            border-bottom-color: var(--pink-border);
-            color: var(--pink-text);
-        }
-
-        .suggestion-item:hover,
-        .suggestion-item.active {
-            background: #ffe3ef;
-        }
-
-        .cat-tag {
-            color: var(--pink-accent);
-            background: var(--pink-panel-strong);
-        }
-
-        .search-box input,
-        .nav-panel input,
-        .modal input,
-        .modal textarea,
-        .modal select,
-        .admin-login input,
-        .admin-form input,
-        .admin-form textarea,
-        .admin-form select,
-        #admin-loc-select,
-        #published-loc-select,
-        #photo-loc-select,
-        #photo-manage-select {
-            background: #fff8fb !important;
-            color: var(--pink-text) !important;
-            border: 1px solid var(--pink-border) !important;
-        }
-
-        .search-box input::placeholder,
-        .nav-panel input::placeholder,
-        .modal input::placeholder,
-        .modal textarea::placeholder,
-        .admin-login input::placeholder,
-        .admin-form input::placeholder,
-        .admin-form textarea::placeholder {
-            color: var(--pink-text-soft);
-        }
-
-        .nav-panel label,
-        .modal label,
-        .admin-form label,
-        #desc,
-        .pending-card .meta,
-        .edge-card .edge-costs,
-        .admin-tab {
-            color: var(--pink-text-soft) !important;
-        }
-
-        .review-card .reviewer,
-        .edge-card .edge-title,
-        #admin-panel h2,
-        .admin-section h4 {
-            color: var(--pink-text) !important;
-        }
-
-        .search-box button,
-        .btn-submit,
-        .btn-sm-blue,
-        button[onclick="getRoute()"],
-        button[onclick="loadPublishedContent()"] {
-            background: var(--pink-accent) !important;
-            color: #fff !important;
-        }
-
-        .search-box button:hover,
-        .btn-submit:hover {
-            background: var(--pink-accent-hover) !important;
-        }
-
-        .btn-action,
-        .btn-nav-set,
-        button[onclick="toggleNavPanel()"],
-        button[onclick="clearRoute()"],
-        button[onclick="reloadAdminData()"],
-        button[onclick="loadEdges()"] {
-            background: #fff0f6 !important;
-            color: var(--pink-accent) !important;
-            border: 1px solid var(--pink-border) !important;
-            box-shadow: var(--pink-shadow);
-        }
-
-        .btn-action:hover,
-        .btn-nav-set:hover,
-        button[onclick="toggleNavPanel()"]:hover,
-        button[onclick="clearRoute()"]:hover,
-        button[onclick="reloadAdminData()"]:hover,
-        button[onclick="loadEdges()"]:hover {
-            background: var(--pink-accent) !important;
-            color: #fff !important;
-        }
-
-        .btn-cancel {
-            background: #f8d9e6;
-            color: var(--pink-text);
-        }
-
-        .sidebar {
-            background: var(--pink-panel);
-            border-left: 1px solid var(--pink-border);
-            box-shadow: -8px 0 24px rgba(188, 77, 126, 0.14);
-        }
-
-        #admin-panel {
-            background: #ffeaf2;
-            border-right: 1px solid var(--pink-border);
-            box-shadow: 2px 0 18px rgba(188, 77, 126, 0.2);
-        }
-
-        #admin-btn,
-        .admin-tab.active {
-            background: #a83467 !important;
-            color: #fff !important;
-            border-color: #a83467 !important;
-        }
-
-        #route-info span {
-            color: var(--pink-accent);
-        }
-
-        #period-badge.morning,
-        #period-badge.noon,
-        #period-badge.evening,
-        .lost-found-card,
-        .badge-review,
-        .badge-lf {
-            background: #ffe3ef !important;
-            color: #932f60 !important;
-        }
-
-        .lost-found-card {
-            border-left-color: var(--pink-accent);
-        }
-
-        hr,
-        .admin-section h4 {
-            border-color: var(--pink-border);
-        }
-
-        .close-btn,
-        .close-modal {
-            color: var(--pink-text-soft);
-        }
     </style>
 </head>
 <body>
@@ -590,21 +397,19 @@
             <div class="admin-section">
                 <h4>➕ 新增路径（边）</h4>
                 <div class="admin-form">
+                    <label>起点地点 <span style="color:#e74c3c">*</span></label>
+                    <select id="new-edge-src" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+                        <option value="">— 选择起点 —</option>
+                    </select>
+                    <label>终点地点 <span style="color:#e74c3c">*</span></label>
+                    <select id="new-edge-tgt" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+                        <option value="">— 选择终点 —</option>
+                    </select>
+                    <p style="font-size:11px;color:#888;margin:8px 0 2px">🚶 拥挤度权重（值越大越拥挤，路径规划越倾向绕行）</p>
                     <div class="form-row">
-                        <div style="flex:1">
-                            <label>起点 ID <span style="color:#e74c3c">*</span></label>
-                            <input type="number" id="new-edge-src" placeholder="节点ID">
-                        </div>
-                        <div style="flex:1">
-                            <label>终点 ID <span style="color:#e74c3c">*</span></label>
-                            <input type="number" id="new-edge-tgt" placeholder="节点ID">
-                        </div>
-                    </div>
-                    <p style="font-size:11px;color:#888;margin:4px 0 2px">拥挤度权重（值越大越拥挤，绕路概率越高）</p>
-                    <div class="form-row">
-                        <div style="flex:1"><label>早高峰</label><input type="number" id="new-edge-morning" placeholder="1" step="0.1" value="1"></div>
-                        <div style="flex:1"><label>平峰</label><input type="number" id="new-edge-noon" placeholder="1" step="0.1" value="1"></div>
-                        <div style="flex:1"><label>晚高峰</label><input type="number" id="new-edge-evening" placeholder="1" step="0.1" value="1"></div>
+                        <div style="flex:1"><label>🌅 早高峰</label><input type="number" id="new-edge-morning" placeholder="1" step="0.1" value="1"></div>
+                        <div style="flex:1"><label>☀️ 平峰</label><input type="number" id="new-edge-noon" placeholder="1" step="0.1" value="1"></div>
+                        <div style="flex:1"><label>🌆 晚高峰</label><input type="number" id="new-edge-evening" placeholder="1" step="0.1" value="1"></div>
                     </div>
                     <button class="btn-submit" onclick="createEdge()" style="width:100%;margin-top:10px">➕ 新增边</button>
                 </div>
@@ -676,7 +481,7 @@
 // ════════════════════════════════
 const map = new maplibregl.Map({
     container: 'map',
-    style: 'https://api.maptiler.com/maps/019e311f-2d66-7a0c-9a2f-b18ea652e610/style.json?key=olZ4jftvJ5YGC8IM7Sno',
+    style: 'https://api.maptiler.com/maps/streets/style.json?key=olZ4jftvJ5YGC8IM7Sno',
     center: [112.857, 27.882],
     zoom: 16
 });
@@ -815,9 +620,9 @@ function toggleNavPanel() {
 //   早高峰 6–11, 晚高峰 17–22, 其余平峰
 function getCurrentPeriod() {
     const h = new Date().getHours();
-    if (h >= 6  && h < 11) return { key: 'cost_morning', label: '🌅 早高峰（6:00–11:00）拥挤度高',  cls: 'morning' };
-    if (h >= 17 && h < 22) return { key: 'cost_evening', label: '🌆 晚高峰（17:00–22:00）拥挤度较高', cls: 'evening' };
-    return                        { key: 'cost_noon',    label: '☀️ 平峰时段，道路顺畅',              cls: 'noon' };
+    if (h >= 6  && h < 11) return { key: 'flow_morning', label: '🌅 早高峰（6:00–11:00）拥挤度高',  cls: 'morning' };
+    if (h >= 17 && h < 22) return { key: 'flow_evening', label: '🌆 晚高峰（17:00–22:00）拥挤度较高', cls: 'evening' };
+    return                        { key: 'flow_noon',    label: '☀️ 平峰时段，道路顺畅',              cls: 'noon' };
 }
 
 function updatePeriodBadge() {
@@ -869,9 +674,9 @@ async function getRoute() {
 
         // 时段信息条
         const periodLabels = {
-            cost_morning: '🌅 早高峰',
-            cost_noon:    '☀️ 平峰时段',
-            cost_evening: '🌆 晚高峰'
+            flow_morning: '🌅 早高峰',
+            flow_noon:    '☀️ 平峰时段',
+            flow_evening: '🌆 晚高峰'
         };
         document.getElementById('ri-period').textContent = periodLabels[data.period] || data.period;
         document.getElementById('ri-nodes').textContent  = (data.pathNodes || []).length;
@@ -1033,6 +838,7 @@ async function adminLogin() {
         renderPendingContent(data);
         // 登录后立即填充已发布内容的地点选择器
         populatePublishedLocSelect();
+        populateEdgeSelects();
     } catch (err) {
         document.getElementById('admin-login-msg').textContent = '连接失败，请确认后端服务已启动';
     }
@@ -1161,7 +967,7 @@ function switchTab(tabId, btn) {
     // 按需懒加载
     if (tabId === 'tab-location') populateAdminLocSelect();
     if (tabId === 'tab-photo')    populatePhotoSelects();
-    if (tabId === 'tab-edge')     loadEdges();
+    if (tabId === 'tab-edge')     { populateEdgeSelects(); loadEdges(); }
 }
 
 // ════════════════════════════════
@@ -1367,10 +1173,10 @@ async function loadEdges() {
                     → ${escHtml(e.target_name)} (${e.target_node})
                 </div>
                 <div class="edge-costs">
-                    🌅 早:${e.cost_morning} &nbsp; ☀️ 平:${e.cost_noon} &nbsp; 🌆 晚:${e.cost_evening}
+                    🌅 早:${e.flow_morning} &nbsp; ☀️ 平:${e.flow_noon} &nbsp; 🌆 晚:${e.flow_evening}
                 </div>
                 <div class="actions">
-                    <button class="btn-sm btn-sm-blue" onclick="openEdgeEdit('${edgeKey}',${e.cost_morning},${e.cost_noon},${e.cost_evening})">✏️ 编辑</button>
+                    <button class="btn-sm btn-sm-blue" onclick="openEdgeEdit('${edgeKey}',${e.flow_morning},${e.flow_noon},${e.flow_evening})">✏️ 编辑</button>
                     <button class="btn-sm btn-sm-red"  onclick="deleteEdge('${edgeKey}')">🗑 删除</button>
                 </div>
             </div>`;
@@ -1391,11 +1197,11 @@ function openEdgeEdit(edgeKey, m, n, ev) {
     updateEdge(edgeKey, parseFloat(nm), parseFloat(nn), parseFloat(ne));
 }
 
-async function updateEdge(edgeKey, cost_morning, cost_noon, cost_evening) {
+async function updateEdge(edgeKey, flow_morning, flow_noon, flow_evening) {
     try {
         const res = await fetch(`${API_BASE}/api/admin/edges/${edgeKey}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-            body: JSON.stringify({ cost_morning, cost_noon, cost_evening })
+            body: JSON.stringify({ flow_morning, flow_noon, flow_evening })
         });
         const data = await res.json();
         alert(data.message || '更新成功');
@@ -1404,15 +1210,19 @@ async function updateEdge(edgeKey, cost_morning, cost_noon, cost_evening) {
 }
 
 async function createEdge() {
-    const src = parseInt(document.getElementById('new-edge-src').value);
-    const tgt = parseInt(document.getElementById('new-edge-tgt').value);
-    if (isNaN(src) || isNaN(tgt)) return alert('请填写有效的起点和终点 ID');
+    const srcSel = document.getElementById('new-edge-src');
+    const tgtSel = document.getElementById('new-edge-tgt');
+    const src = parseInt(srcSel.value);
+    const tgt = parseInt(tgtSel.value);
+    if (!src) return alert('请选择起点地点');
+    if (!tgt) return alert('请选择终点地点');
+    if (src === tgt) return alert('起点和终点不能是同一个地点');
     const payload = {
         source_node:  src,
         target_node:  tgt,
-        cost_morning: parseFloat(document.getElementById('new-edge-morning').value) || 1,
-        cost_noon:    parseFloat(document.getElementById('new-edge-noon').value)    || 1,
-        cost_evening: parseFloat(document.getElementById('new-edge-evening').value) || 1
+        flow_morning: parseFloat(document.getElementById('new-edge-morning').value) || 1,
+        flow_noon:    parseFloat(document.getElementById('new-edge-noon').value)    || 1,
+        flow_evening: parseFloat(document.getElementById('new-edge-evening').value) || 1
     };
     try {
         const res  = await fetch(`${API_BASE}/api/admin/edges`, {
@@ -1422,7 +1232,8 @@ async function createEdge() {
         const data = await res.json();
         if (!res.ok) return alert(data.error || '新增失败');
         alert(data.message);
-        ['new-edge-src','new-edge-tgt'].forEach(id => document.getElementById(id).value = '');
+        srcSel.value = '';
+        tgtSel.value = '';
         ['new-edge-morning','new-edge-noon','new-edge-evening'].forEach(id => document.getElementById(id).value = '1');
         loadEdges();
     } catch (_) { alert('新增失败'); }
@@ -1513,6 +1324,19 @@ async function adminDeletePublished(type, id) {
             alert('删除失败');
         }
     } catch (_) { alert('删除失败'); }
+}
+
+
+// ════════════════════════════════
+//  填充新增边的起终点下拉框
+// ════════════════════════════════
+function populateEdgeSelects() {
+    const opts = '<option value="">— 选择地点 —</option>'
+        + allLocations.map(l => `<option value="${l.id}">${escHtml(l.name)} (ID:${l.id})</option>`).join('');
+    const src = document.getElementById('new-edge-src');
+    const tgt = document.getElementById('new-edge-tgt');
+    if (src) src.innerHTML = opts;
+    if (tgt) tgt.innerHTML = opts;
 }
 
 </script>
