@@ -7,7 +7,7 @@ const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
     database: 'postgres',
-    password: '416906', 
+    password: '416906', //这里填写自己的数据库密码
     port: 5432,
 });
 
