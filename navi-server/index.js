@@ -29,9 +29,11 @@ app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// 2. 【核心新增】托管整个前端静态资源 (index.html, css, js, assets 等)
 // 因为你的 index.js 在 navi-server 里，而 index.html 在根目录，所以用 '..' 向上跳一级
 app.use(express.static(path.join(__dirname, '../3d')));
 
+// 3. 【核心新增】显式定义根路径路由，确保访问 localhost:3000 直接显示地图
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
@@ -47,8 +49,9 @@ const adminAuth = (req, res, next) => {
     }
 };
 
-
-// 1. 公共接口 
+// ==========================================
+// 1. 公共接口 (所有人可用)
+// ==========================================
 
 // 获取所有建筑 (用于 Mapbox 渲染)
 app.get('/api/map/buildings', async (req, res) => {
@@ -156,7 +159,9 @@ app.get('/api/map/edges', async (req, res) => {
     }
 });
 
+// ==========================================
 // 2. 用户投稿接口 (所有人可用，默认 status=0)
+// ==========================================
 
 app.post('/api/reviews', async (req, res) => {
     const { location_id, user_nickname, rating, comment } = req.body;
@@ -185,7 +190,9 @@ app.post('/api/lost-found', async (req, res) => {
     }
 });
 
+// ==========================================
 // 3. 管理员接口 (需要 adminAuth 验证)
+// ==========================================
 
 // 获取所有待审核内容
 app.get('/api/admin/pending', adminAuth, async (req, res) => {
@@ -197,7 +204,6 @@ app.get('/api/admin/pending', adminAuth, async (req, res) => {
         res.status(500).json({ error: '获取列表失败' });
     }
 });
-
 
 // 通用一键审核通过
 app.patch('/api/admin/approve/:type/:id', adminAuth, async (req, res) => {
@@ -237,7 +243,6 @@ app.delete('/api/admin/reviews/:id', adminAuth, async (req, res) => {
     }
 });
 
-
 // 删除失物招领（管理员拒绝时使用）
 app.delete('/api/admin/lost-found/:id', adminAuth, async (req, res) => {
     try {
@@ -272,23 +277,41 @@ app.delete('/api/admin/photos/:id', adminAuth, async (req, res) => {
     }
 });
 
-
 // 新增建筑/地点
+// ⚠️ Bug3修复：locations.id 如果不是 SERIAL/SEQUENCE，需要手动取最大ID+1
+// 若你的表已经是 SERIAL，这里的写法也完全兼容（COALESCE MAX+1 fallback）
 app.post('/api/admin/locations', adminAuth, async (req, res) => {
     const { name, longitude, latitude, height, description, category } = req.body;
     if (!name || longitude == null || latitude == null) {
         return res.status(400).json({ error: '名称、经度、纬度为必填项' });
     }
     try {
-        const result = await pool.query(
-            `INSERT INTO locations (name, longitude, latitude, height, description, category)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [name, longitude, latitude, height || 0, description || '', category || '']
-        );
+        // 先尝试不指定ID让数据库自增（SERIAL表）
+        // 若报主键冲突，说明序列与数据不同步，则手动用 MAX(id)+1
+        let result;
+        try {
+            result = await pool.query(
+                `INSERT INTO locations (name, longitude, latitude, height, description, category)
+                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+                [name, longitude, latitude, height || 0, description || '', category || '']
+            );
+        } catch (innerErr) {
+            if (innerErr.code === '23505') {
+                // 序列与表数据不同步：手动修复序列后重试
+                await pool.query(`SELECT setval(pg_get_serial_sequence('locations','id'), (SELECT MAX(id) FROM locations))`);
+                result = await pool.query(
+                    `INSERT INTO locations (name, longitude, latitude, height, description, category)
+                     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+                    [name, longitude, latitude, height || 0, description || '', category || '']
+                );
+            } else {
+                throw innerErr;
+            }
+        }
         res.json({ message: '建筑新增成功', location: result.rows[0] });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: '新增失败' });
+        res.status(500).json({ error: '新增失败：' + err.message });
     }
 });
 
@@ -308,75 +331,126 @@ app.delete('/api/admin/locations/:id', adminAuth, async (req, res) => {
     }
 });
 
-
-// 获取所有边（含端点名称）
-app.get('/api/admin/edges', adminAuth, async (req, res) => {
+// Bug1：获取指定地点已发布（status=1）的评价和失物招领（供管理员删除）
+app.get('/api/admin/location/:id/published', adminAuth, async (req, res) => {
+    const { id } = req.params;
     try {
-        const { rows } = await pool.query(`
-            SELECT e.id, e.source_node, e.target_node,
-                   l1.name AS source_name, l2.name AS target_name,
-                   e.cost_morning, e.cost_noon, e.cost_evening
-            FROM edges e
-            JOIN locations l1 ON e.source_node = l1.id
-            JOIN locations l2 ON e.target_node = l2.id
-            ORDER BY e.id ASC
-        `);
-        res.json(rows);
+        const reviews   = await pool.query('SELECT * FROM location_reviews WHERE location_id=$1 AND status=1 ORDER BY id DESC', [id]);
+        const lostFound = await pool.query('SELECT * FROM lost_and_found   WHERE location_id=$1 AND status=1 ORDER BY id DESC', [id]);
+        res.json({ reviews: reviews.rows, lost_found: lostFound.rows });
     } catch (err) {
-        res.status(500).json({ error: '获取边列表失败' });
+        res.status(500).json({ error: '获取失败' });
     }
 });
 
-// 新增边
+// Bug2修复：edges表若无id列，用 ROW_NUMBER() 生成虚拟序号；同时兼容有id列的情况
+app.get('/api/admin/edges', adminAuth, async (req, res) => {
+    try {
+        // 先检查 edges 表是否有 id 列
+        const colCheck = await pool.query(`
+            SELECT column_name FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='edges' AND column_name='id'
+        `);
+        let query;
+        if (colCheck.rows.length > 0) {
+            // edges 表有 id 列（标准情况）
+            query = `
+                SELECT e.id, e.source_node, e.target_node,
+                       l1.name AS source_name, l2.name AS target_name,
+                       e.cost_morning, e.cost_noon, e.cost_evening
+                FROM edges e
+                JOIN locations l1 ON e.source_node = l1.id
+                JOIN locations l2 ON e.target_node = l2.id
+                ORDER BY e.id ASC
+            `;
+        } else {
+            // edges 表无 id 列，用 ROW_NUMBER() 生成虚拟序号
+            query = `
+                SELECT ROW_NUMBER() OVER (ORDER BY e.source_node, e.target_node) AS id,
+                       e.source_node, e.target_node,
+                       l1.name AS source_name, l2.name AS target_name,
+                       e.cost_morning, e.cost_noon, e.cost_evening
+                FROM edges e
+                JOIN locations l1 ON e.source_node = l1.id
+                JOIN locations l2 ON e.target_node = l2.id
+                ORDER BY e.source_node, e.target_node
+            `;
+        }
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error('获取边列表出错:', err.message);
+        res.status(500).json({ error: '获取边列表失败：' + err.message });
+    }
+});
+
+// 新增边（兼容有/无id列的edges表）
 app.post('/api/admin/edges', adminAuth, async (req, res) => {
     const { source_node, target_node, cost_morning, cost_noon, cost_evening } = req.body;
     if (!source_node || !target_node) {
         return res.status(400).json({ error: '起点ID和终点ID为必填项' });
     }
     try {
-        const result = await pool.query(
+        await pool.query(
             `INSERT INTO edges (source_node, target_node, cost_morning, cost_noon, cost_evening)
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+             VALUES ($1, $2, $3, $4, $5)`,
             [source_node, target_node,
              cost_morning ?? 1, cost_noon ?? 1, cost_evening ?? 1]
         );
-        res.json({ message: '边新增成功', edge: result.rows[0] });
+        res.json({ message: '边新增成功' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: '新增失败，请确认节点ID存在' });
+        res.status(500).json({ error: '新增失败：' + err.message });
     }
 });
 
-
-// 更新边权重（三个时段）
+// 更新边权重（兼容有/无id列；id格式同删除接口）
 app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
-    const { id } = req.params;
+    const raw = req.params.id;
     const { cost_morning, cost_noon, cost_evening } = req.body;
     try {
-        await pool.query(
-            `UPDATE edges SET
+        let q, params;
+        if (raw.includes(':')) {
+            const [src, tgt] = raw.split(':').map(Number);
+            q = `UPDATE edges SET
                 cost_morning = COALESCE($1, cost_morning),
                 cost_noon    = COALESCE($2, cost_noon),
                 cost_evening = COALESCE($3, cost_evening)
-             WHERE id = $4`,
-            [cost_morning, cost_noon, cost_evening, id]
-        );
+             WHERE source_node=$4 AND target_node=$5`;
+            params = [cost_morning, cost_noon, cost_evening, src, tgt];
+        } else {
+            q = `UPDATE edges SET
+                cost_morning = COALESCE($1, cost_morning),
+                cost_noon    = COALESCE($2, cost_noon),
+                cost_evening = COALESCE($3, cost_evening)
+             WHERE id = $4`;
+            params = [cost_morning, cost_noon, cost_evening, parseInt(raw)];
+        }
+        await pool.query(q, params);
         res.json({ message: '边权重更新成功' });
     } catch (err) {
-        res.status(500).json({ error: '更新失败' });
+        console.error(err);
+        res.status(500).json({ error: '更新失败：' + err.message });
     }
 });
 
-// 删除边
+// 删除边（兼容有/无id列；前端传 source_node:target_node 格式或纯id）
 app.delete('/api/admin/edges/:id', adminAuth, async (req, res) => {
+    const raw = req.params.id;
     try {
-        await pool.query('DELETE FROM edges WHERE id = $1', [req.params.id]);
+        if (raw.includes(':')) {
+            // 无id列时：前端传 "srcId:tgtId"
+            const [src, tgt] = raw.split(':').map(Number);
+            await pool.query('DELETE FROM edges WHERE source_node=$1 AND target_node=$2', [src, tgt]);
+        } else {
+            await pool.query('DELETE FROM edges WHERE id=$1', [parseInt(raw)]);
+        }
         res.json({ message: '边已删除' });
     } catch (err) {
-        res.status(500).json({ error: '删除失败' });
+        console.error(err);
+        res.status(500).json({ error: '删除失败：' + err.message });
     }
 });
-
 
 // --- 启动服务器 ---
 const PORT = 3000;

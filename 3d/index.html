@@ -292,6 +292,26 @@
                 <h4>待审核失物招领 <span id="lf-count" class="count-badge badge-lf">0</span></h4>
                 <div id="pending-lf"><p style="font-size:12px;color:#999">加载中...</p></div>
             </div>
+            <!-- 已发布内容管理 -->
+            <div class="admin-section">
+                <h4>🗂 管理已发布内容（按地点）</h4>
+                <select id="published-loc-select"
+                        style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px;margin-bottom:8px">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <button onclick="loadPublishedContent()"
+                        style="width:100%;padding:7px;background:#3bb2d0;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-bottom:10px;">
+                    🔍 查询已发布内容
+                </button>
+                <div id="published-reviews-section" style="display:none">
+                    <p style="font-size:12px;font-weight:bold;color:#155724;margin:6px 0 4px">✅ 已发布评价</p>
+                    <div id="published-reviews"></div>
+                </div>
+                <div id="published-lf-section" style="display:none">
+                    <p style="font-size:12px;font-weight:bold;color:#856404;margin:6px 0 4px">📢 已发布失物招领</p>
+                    <div id="published-lf"></div>
+                </div>
+            </div>
         </div>
 
         <!-- ② 地点管理 -->
@@ -818,6 +838,8 @@ async function adminLogin() {
         document.getElementById('admin-content').style.display = 'block';
         const data = await res.json();
         renderPendingContent(data);
+        // 登录后立即填充已发布内容的地点选择器
+        populatePublishedLocSelect();
     } catch (err) {
         document.getElementById('admin-login-msg').textContent = '连接失败，请确认后端服务已启动';
     }
@@ -1135,10 +1157,18 @@ async function loadEdges() {
     container.innerHTML = '<p style="font-size:12px;color:#999">加载中...</p>';
     try {
         const res   = await fetch(`${API_BASE}/api/admin/edges`, { headers: { 'x-admin-token': adminToken } });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            container.innerHTML = `<p style="font-size:12px;color:#e74c3c">加载失败：${escHtml(err.error || res.statusText)}</p>`;
+            return;
+        }
         const edges = await res.json();
         if (!edges.length) { container.innerHTML = '<p style="font-size:12px;color:#999">暂无边数据</p>'; return; }
-        container.innerHTML = edges.map(e => `
-            <div class="edge-card" id="edge-${e.id}">
+        // 用 src:tgt 作为唯一键（兼容edges表无id列的情况；有id列时后端也返回id，但我们统一用src:tgt避免歧义）
+        container.innerHTML = edges.map(e => {
+            const edgeKey = `${e.source_node}:${e.target_node}`;
+            return `
+            <div class="edge-card" id="edge-${edgeKey}">
                 <div class="edge-title">
                     ${escHtml(e.source_name)} (${e.source_node})
                     → ${escHtml(e.target_name)} (${e.target_node})
@@ -1147,26 +1177,30 @@ async function loadEdges() {
                     🌅 早:${e.cost_morning} &nbsp; ☀️ 平:${e.cost_noon} &nbsp; 🌆 晚:${e.cost_evening}
                 </div>
                 <div class="actions">
-                    <button class="btn-sm btn-sm-blue" onclick="openEdgeEdit(${e.id},${e.cost_morning},${e.cost_noon},${e.cost_evening})">✏️ 编辑</button>
-                    <button class="btn-sm btn-sm-red"  onclick="deleteEdge(${e.id})">🗑 删除</button>
+                    <button class="btn-sm btn-sm-blue" onclick="openEdgeEdit('${edgeKey}',${e.cost_morning},${e.cost_noon},${e.cost_evening})">✏️ 编辑</button>
+                    <button class="btn-sm btn-sm-red"  onclick="deleteEdge('${edgeKey}')">🗑 删除</button>
                 </div>
-            </div>`).join('');
-    } catch (_) { container.innerHTML = '<p style="font-size:12px;color:#e74c3c">加载失败</p>'; }
+            </div>`;
+        }).join('');
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<p style="font-size:12px;color:#e74c3c">加载失败，请检查后端服务</p>';
+    }
 }
 
-function openEdgeEdit(id, m, n, e) {
-    const nm = prompt(`边 ID ${id} — 早高峰权重（当前 ${m}）：`, m);
+function openEdgeEdit(edgeKey, m, n, ev) {
+    const nm = prompt(`编辑边 ${edgeKey}\n早高峰权重（当前 ${m}，值越大越拥挤）：`, m);
     if (nm === null) return;
     const nn = prompt(`平峰权重（当前 ${n}）：`, n);
     if (nn === null) return;
-    const ne = prompt(`晚高峰权重（当前 ${e}）：`, e);
+    const ne = prompt(`晚高峰权重（当前 ${ev}）：`, ev);
     if (ne === null) return;
-    updateEdge(id, parseFloat(nm), parseFloat(nn), parseFloat(ne));
+    updateEdge(edgeKey, parseFloat(nm), parseFloat(nn), parseFloat(ne));
 }
 
-async function updateEdge(id, cost_morning, cost_noon, cost_evening) {
+async function updateEdge(edgeKey, cost_morning, cost_noon, cost_evening) {
     try {
-        const res = await fetch(`${API_BASE}/api/admin/edges/${id}`, {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${edgeKey}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
             body: JSON.stringify({ cost_morning, cost_noon, cost_evening })
         });
@@ -1201,14 +1235,90 @@ async function createEdge() {
     } catch (_) { alert('新增失败'); }
 }
 
-async function deleteEdge(id) {
-    if (!confirm(`确认删除边 ID ${id}？`)) return;
+async function deleteEdge(edgeKey) {
+    if (!confirm(`确认删除路径 ${edgeKey}？`)) return;
     try {
-        const res = await fetch(`${API_BASE}/api/admin/edges/${id}`, {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${edgeKey}`, {
             method: 'DELETE', headers: { 'x-admin-token': adminToken }
         });
-        if (res.ok) { document.getElementById(`edge-${id}`)?.remove(); }
-        else alert('删除失败');
+        if (res.ok) { document.getElementById(`edge-${edgeKey}`)?.remove(); }
+        else {
+            const data = await res.json().catch(() => ({}));
+            alert('删除失败：' + (data.error || res.statusText));
+        }
+    } catch (_) { alert('删除失败'); }
+}
+
+
+// ════════════════════════════════
+//  已发布内容管理（Bug1）
+// ════════════════════════════════
+function populatePublishedLocSelect() {
+    const sel = document.getElementById('published-loc-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— 选择地点 —</option>'
+        + allLocations.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+}
+
+async function loadPublishedContent() {
+    const id = document.getElementById('published-loc-select').value;
+    if (!id) return alert('请先选择地点');
+
+    const rSection  = document.getElementById('published-reviews-section');
+    const lfSection = document.getElementById('published-lf-section');
+    rSection.style.display = 'none';
+    lfSection.style.display = 'none';
+
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/location/${id}/published`, {
+            headers: { 'x-admin-token': adminToken }
+        });
+        const data = await res.json();
+
+        // 已发布评价
+        const reviews = data.reviews || [];
+        document.getElementById('published-reviews').innerHTML = reviews.length
+            ? reviews.map(r => `
+                <div class="pending-card" id="pub-r-${r.id}">
+                    <div class="meta">${'⭐'.repeat(r.rating||0)} | ${escHtml(r.user_nickname||'匿名')}</div>
+                    ${escHtml(r.comment)}
+                    <div class="actions">
+                        <button class="btn-reject" onclick="adminDeletePublished('reviews',${r.id})">🗑 删除</button>
+                    </div>
+                </div>`).join('')
+            : '<p style="font-size:12px;color:#999">该地点暂无已发布评价</p>';
+        rSection.style.display = 'block';
+
+        // 已发布失物招领
+        const lfs = data.lost_found || [];
+        document.getElementById('published-lf').innerHTML = lfs.length
+            ? lfs.map(lf => `
+                <div class="pending-card" id="pub-lf-${lf.id}">
+                    <div class="meta">[${escHtml(lf.type)}] ${escHtml(lf.item_name)}</div>
+                    ${lf.description ? escHtml(lf.description) : ''}
+                    ${lf.contact ? `<div style="font-size:11px;color:#888">📞 ${escHtml(lf.contact)}</div>` : ''}
+                    <div class="actions">
+                        <button class="btn-reject" onclick="adminDeletePublished('lost-found',${lf.id})">🗑 删除</button>
+                    </div>
+                </div>`).join('')
+            : '<p style="font-size:12px;color:#999">该地点暂无已发布失物招领</p>';
+        lfSection.style.display = 'block';
+    } catch (_) { alert('查询失败，请检查后端服务'); }
+}
+
+async function adminDeletePublished(type, id) {
+    if (!confirm('确认删除这条已发布内容？')) return;
+    const url = type === 'reviews'
+        ? `${API_BASE}/api/admin/reviews/${id}`
+        : `${API_BASE}/api/admin/lost-found/${id}`;
+    try {
+        const res = await fetch(url, { method: 'DELETE', headers: { 'x-admin-token': adminToken } });
+        if (res.ok) {
+            const prefix = type === 'reviews' ? 'pub-r' : 'pub-lf';
+            document.getElementById(`${prefix}-${id}`)?.remove();
+        } else {
+            alert('删除失败');
+        }
     } catch (_) { alert('删除失败'); }
 }
 
