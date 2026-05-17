@@ -1,15 +1,24 @@
+require('dotenv').config(); // 自动读取 .env 文件中的变量
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// 数据库连接配置
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'postgres',
-    password: '416906', //这里填写自己的数据库密码
-    port: 5432,
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'postgres',
+    password: process.env.DB_PASSWORD, // 不再写死密码
+    port: process.env.DB_PORT || 5432,
 });
+
+// // 数据库连接配置
+// const pool = new Pool({
+//     user: 'postgres',
+//     host: 'localhost',
+//     database: 'postgres',
+//     password: '416906', 
+//     port: 5432,
+// });
 
 async function migrate() {
     const client = await pool.connect();
