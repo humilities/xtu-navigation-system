@@ -136,6 +136,47 @@
         .count-badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 10px; margin-left: 6px; }
         .badge-review { background: #d4edda; color: #155724; }
         .badge-lf     { background: #fff3cd; color: #856404; }
+
+        /* ── 管理员面板 Tab 切换 ── */
+        .admin-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+        .admin-tab {
+            padding: 6px 12px; border: 1px solid #ddd; border-radius: 5px;
+            background: white; cursor: pointer; font-size: 12px; color: #555;
+        }
+        .admin-tab.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+
+        /* ── 照片管理 ── */
+        .photo-manage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+        .photo-manage-item { position: relative; }
+        .photo-manage-item img { width: 100%; height: 70px; object-fit: cover; border-radius: 4px; }
+        .photo-del-btn {
+            position: absolute; top: 2px; right: 2px; background: rgba(231,76,60,0.85);
+            color: white; border: none; border-radius: 3px; cursor: pointer;
+            font-size: 11px; padding: 2px 5px; line-height: 1;
+        }
+
+        /* ── 边列表 ── */
+        .edge-card { border: 1px solid #e8e8e8; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: 12px; }
+        .edge-card .edge-title { font-weight: bold; color: #333; margin-bottom: 4px; }
+        .edge-card .edge-costs { color: #666; font-size: 11px; }
+        .edge-card .actions { display: flex; gap: 6px; margin-top: 6px; }
+        .btn-sm { padding: 3px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; }
+        .btn-sm-blue   { background: #3bb2d0; color: white; }
+        .btn-sm-red    { background: #e74c3c; color: white; }
+        .btn-sm-green  { background: #2ecc71; color: white; }
+
+        /* ── 表单行 ── */
+        .form-row { display: flex; gap: 8px; }
+        .form-row input { flex: 1; }
+        .admin-form label { font-size: 12px; color: #555; display: block; margin: 8px 0 3px; }
+        .admin-form input, .admin-form textarea, .admin-form select {
+            width: 100%; padding: 7px; border: 1px solid #ddd;
+            border-radius: 4px; font-size: 13px; box-sizing: border-box;
+        }
+        .admin-form textarea { min-height: 60px; resize: vertical; }
+
+        /* ── 地点选择器 ── */
+        #admin-loc-select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -213,8 +254,9 @@
 <!-- ══ 管理员面板 ══ -->
 <div id="admin-panel">
     <button class="close-btn" onclick="toggleAdminPanel()">×</button>
-    <h2>🛡 管理员审核后台</h2>
+    <h2>🛡 管理员后台</h2>
 
+    <!-- 登录区 -->
     <div id="admin-login-section" class="admin-section">
         <h4>身份验证</h4>
         <div class="admin-login">
@@ -225,20 +267,145 @@
         <p id="admin-login-msg" style="font-size:12px;color:#e74c3c;margin:6px 0 0;"></p>
     </div>
 
+    <!-- 登录后内容 -->
     <div id="admin-content" style="display:none">
-        <button onclick="reloadAdminData()"
-                style="width:100%;padding:8px;background:#ecf0f1;border:none;border-radius:5px;cursor:pointer;font-size:12px;margin-bottom:12px;">
-            🔄 刷新待审核内容
-        </button>
-        <div class="admin-section">
-            <h4>待审核评价 <span id="review-count" class="count-badge badge-review">0</span></h4>
-            <div id="pending-reviews"><p style="font-size:12px;color:#999">加载中...</p></div>
+
+        <!-- Tab 导航 -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" onclick="switchTab('tab-review',this)">📝 内容审核</button>
+            <button class="admin-tab" onclick="switchTab('tab-location',this)">📍 地点管理</button>
+            <button class="admin-tab" onclick="switchTab('tab-photo',this)">🖼 照片管理</button>
+            <button class="admin-tab" onclick="switchTab('tab-edge',this)">🔗 路网管理</button>
         </div>
-        <div class="admin-section">
-            <h4>待审核失物招领 <span id="lf-count" class="count-badge badge-lf">0</span></h4>
-            <div id="pending-lf"><p style="font-size:12px;color:#999">加载中...</p></div>
+
+        <!-- ① 内容审核 -->
+        <div id="tab-review" class="admin-tab-content">
+            <button onclick="reloadAdminData()"
+                    style="width:100%;padding:7px;background:#ecf0f1;border:none;border-radius:5px;cursor:pointer;font-size:12px;margin-bottom:10px;">
+                🔄 刷新待审核
+            </button>
+            <div class="admin-section">
+                <h4>待审核评价 <span id="review-count" class="count-badge badge-review">0</span></h4>
+                <div id="pending-reviews"><p style="font-size:12px;color:#999">加载中...</p></div>
+            </div>
+            <div class="admin-section">
+                <h4>待审核失物招领 <span id="lf-count" class="count-badge badge-lf">0</span></h4>
+                <div id="pending-lf"><p style="font-size:12px;color:#999">加载中...</p></div>
+            </div>
         </div>
-    </div>
+
+        <!-- ② 地点管理 -->
+        <div id="tab-location" class="admin-tab-content" style="display:none">
+            <!-- 选择已有地点 -->
+            <div class="admin-section">
+                <h4>✏️ 编辑现有地点</h4>
+                <select id="admin-loc-select" onchange="onAdminLocSelect()">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <div id="admin-loc-edit-form" class="admin-form" style="display:none">
+                    <label>名称</label>
+                    <input type="text" id="edit-loc-name">
+                    <label>描述</label>
+                    <textarea id="edit-loc-desc"></textarea>
+                    <label>分类</label>
+                    <input type="text" id="edit-loc-category" placeholder="如：教学楼、食堂">
+                    <label>经度</label>
+                    <input type="number" id="edit-loc-lng" step="0.000001">
+                    <label>纬度</label>
+                    <input type="number" id="edit-loc-lat" step="0.000001">
+                    <label>高度（米）</label>
+                    <input type="number" id="edit-loc-height" step="0.1">
+                    <div style="display:flex;gap:8px;margin-top:10px">
+                        <button class="btn-submit" onclick="saveLocEdit()" style="flex:1">💾 保存修改</button>
+                        <button onclick="deleteLocation()" style="flex:1;padding:10px;background:#e74c3c;color:white;border:none;border-radius:5px;cursor:pointer;font-size:13px;">🗑 删除建筑</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 新增地点 -->
+            <div class="admin-section">
+                <h4>➕ 新增建筑/地点</h4>
+                <div class="admin-form">
+                    <label>名称 <span style="color:#e74c3c">*</span></label>
+                    <input type="text" id="new-loc-name" placeholder="如：第二教学楼">
+                    <label>描述</label>
+                    <textarea id="new-loc-desc" placeholder="简要描述该建筑..."></textarea>
+                    <label>分类</label>
+                    <input type="text" id="new-loc-category" placeholder="教学楼 / 食堂 / 宿舍...">
+                    <div class="form-row">
+                        <div style="flex:1">
+                            <label>经度 <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-loc-lng" placeholder="112.857" step="0.000001">
+                        </div>
+                        <div style="flex:1">
+                            <label>纬度 <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-loc-lat" placeholder="27.882" step="0.000001">
+                        </div>
+                    </div>
+                    <label>高度（米）</label>
+                    <input type="number" id="new-loc-height" placeholder="15" step="0.1" value="10">
+                    <button class="btn-submit" onclick="createLocation()" style="width:100%;margin-top:10px">➕ 新增建筑</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ③ 照片管理 -->
+        <div id="tab-photo" class="admin-tab-content" style="display:none">
+            <div class="admin-section">
+                <h4>🖼 上传建筑照片</h4>
+                <label style="font-size:12px;color:#555;display:block;margin-bottom:6px">选择地点</label>
+                <select id="photo-loc-select" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px;margin-bottom:10px">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <input type="file" id="photo-file-input" accept="image/*" multiple
+                       style="font-size:13px;margin-bottom:8px;width:100%">
+                <button class="btn-submit" onclick="uploadPhotos()" style="width:100%">📤 上传照片</button>
+                <div id="upload-progress" style="font-size:12px;color:#3bb2d0;margin-top:6px;display:none">上传中...</div>
+            </div>
+            <div class="admin-section">
+                <h4>🗂 管理已有照片</h4>
+                <select id="photo-manage-select" onchange="loadLocationPhotos()"
+                        style="width:100%;padding:7px;border:1px solid #ddd;border-radius:4px;font-size:13px;margin-bottom:10px">
+                    <option value="">— 选择地点 —</option>
+                </select>
+                <div id="photo-manage-grid" class="photo-manage-grid"></div>
+            </div>
+        </div>
+
+        <!-- ④ 路网管理 -->
+        <div id="tab-edge" class="admin-tab-content" style="display:none">
+            <!-- 新增边 -->
+            <div class="admin-section">
+                <h4>➕ 新增路径（边）</h4>
+                <div class="admin-form">
+                    <div class="form-row">
+                        <div style="flex:1">
+                            <label>起点 ID <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-edge-src" placeholder="节点ID">
+                        </div>
+                        <div style="flex:1">
+                            <label>终点 ID <span style="color:#e74c3c">*</span></label>
+                            <input type="number" id="new-edge-tgt" placeholder="节点ID">
+                        </div>
+                    </div>
+                    <p style="font-size:11px;color:#888;margin:4px 0 2px">拥挤度权重（值越大越拥挤，绕路概率越高）</p>
+                    <div class="form-row">
+                        <div style="flex:1"><label>早高峰</label><input type="number" id="new-edge-morning" placeholder="1" step="0.1" value="1"></div>
+                        <div style="flex:1"><label>平峰</label><input type="number" id="new-edge-noon" placeholder="1" step="0.1" value="1"></div>
+                        <div style="flex:1"><label>晚高峰</label><input type="number" id="new-edge-evening" placeholder="1" step="0.1" value="1"></div>
+                    </div>
+                    <button class="btn-submit" onclick="createEdge()" style="width:100%;margin-top:10px">➕ 新增边</button>
+                </div>
+            </div>
+            <!-- 边列表 -->
+            <div class="admin-section">
+                <h4>📋 现有路径列表
+                    <button onclick="loadEdges()" style="font-size:11px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;margin-left:8px;background:white">🔄 刷新</button>
+                </h4>
+                <div id="edge-list"><p style="font-size:12px;color:#999">点击刷新加载</p></div>
+            </div>
+        </div>
+
+    </div><!-- /admin-content -->
 </div>
 
 <!-- ══ 评价模态框 ══ -->
@@ -766,6 +933,285 @@ function escHtml(s) {
 function escAttr(s) {
     return String(s ?? '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+// ════════════════════════════════
+//  管理员面板：Tab 切换
+// ════════════════════════════════
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).style.display = 'block';
+    btn.classList.add('active');
+
+    // 按需懒加载
+    if (tabId === 'tab-location') populateAdminLocSelect();
+    if (tabId === 'tab-photo')    populatePhotoSelects();
+    if (tabId === 'tab-edge')     loadEdges();
+}
+
+// ════════════════════════════════
+//  地点管理
+// ════════════════════════════════
+function populateAdminLocSelect() {
+    const sel = document.getElementById('admin-loc-select');
+    sel.innerHTML = '<option value="">— 选择地点 —</option>'
+        + allLocations.map(l => `<option value="${l.id}">${escHtml(l.name)} (ID:${l.id})</option>`).join('');
+}
+
+function onAdminLocSelect() {
+    const id = parseInt(document.getElementById('admin-loc-select').value);
+    const form = document.getElementById('admin-loc-edit-form');
+    if (!id) { form.style.display = 'none'; return; }
+    const loc = allLocations.find(l => l.id === id);
+    if (!loc) return;
+    document.getElementById('edit-loc-name').value     = loc.name || '';
+    document.getElementById('edit-loc-desc').value     = loc.description || '';
+    document.getElementById('edit-loc-category').value = loc.category || '';
+    document.getElementById('edit-loc-lng').value      = loc.longitude || '';
+    document.getElementById('edit-loc-lat').value      = loc.latitude || '';
+    document.getElementById('edit-loc-height').value   = loc.height || '';
+    form.style.display = 'block';
+}
+
+async function saveLocEdit() {
+    const id = parseInt(document.getElementById('admin-loc-select').value);
+    if (!id) return;
+    const payload = {
+        name:        document.getElementById('edit-loc-name').value.trim(),
+        description: document.getElementById('edit-loc-desc').value.trim(),
+        category:    document.getElementById('edit-loc-category').value.trim(),
+        longitude:   parseFloat(document.getElementById('edit-loc-lng').value),
+        latitude:    parseFloat(document.getElementById('edit-loc-lat').value),
+        height:      parseFloat(document.getElementById('edit-loc-height').value) || 0
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/locations/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert(data.message || '保存成功');
+        // 刷新本地缓存
+        const idx = allLocations.findIndex(l => l.id === id);
+        if (idx >= 0) allLocations[idx] = { ...allLocations[idx], ...payload };
+    } catch (_) { alert('保存失败'); }
+}
+
+async function createLocation() {
+    const name = document.getElementById('new-loc-name').value.trim();
+    const lng  = parseFloat(document.getElementById('new-loc-lng').value);
+    const lat  = parseFloat(document.getElementById('new-loc-lat').value);
+    if (!name || isNaN(lng) || isNaN(lat)) return alert('名称、经度、纬度为必填项');
+
+    const payload = {
+        name,
+        longitude:   lng,
+        latitude:    lat,
+        height:      parseFloat(document.getElementById('new-loc-height').value) || 10,
+        description: document.getElementById('new-loc-desc').value.trim(),
+        category:    document.getElementById('new-loc-category').value.trim()
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/locations`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data.error || '新增失败');
+        alert(data.message);
+        // 追加到本地缓存并刷新地图marker
+        allLocations.push(data.location);
+        addMarkerToMap(data.location);
+        // 清空表单
+        ['new-loc-name','new-loc-desc','new-loc-category','new-loc-lng','new-loc-lat'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('new-loc-height').value = '10';
+        populateAdminLocSelect();
+    } catch (_) { alert('新增失败'); }
+}
+
+function addMarkerToMap(b) {
+    const el = document.createElement('div');
+    Object.assign(el.style, {
+        width: '12px', height: '12px', backgroundColor: '#ef4c4c',
+        borderRadius: '50%', cursor: 'pointer',
+        border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
+    });
+    new maplibregl.Marker(el)
+        .setLngLat([parseFloat(b.longitude), parseFloat(b.latitude)])
+        .addTo(map);
+    el.addEventListener('click', () => showLocationDetail(b.id));
+    map.flyTo({ center: [parseFloat(b.longitude), parseFloat(b.latitude)], zoom: 17 });
+}
+
+async function deleteLocation() {
+    const id = parseInt(document.getElementById('admin-loc-select').value);
+    if (!id) return;
+    const loc = allLocations.find(l => l.id === id);
+    if (!confirm(`确认删除「${loc?.name}」？此操作将同时删除其所有照片、评价、失物招领及关联路径，不可撤销！`)) return;
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/locations/${id}`, {
+            method: 'DELETE', headers: { 'x-admin-token': adminToken }
+        });
+        const data = await res.json();
+        alert(data.message || '已删除');
+        allLocations = allLocations.filter(l => l.id !== id);
+        document.getElementById('admin-loc-select').value = '';
+        document.getElementById('admin-loc-edit-form').style.display = 'none';
+        populateAdminLocSelect();
+        // 提示用户刷新页面重建markers
+        alert('地点已删除，请刷新页面以更新地图标记');
+    } catch (_) { alert('删除失败'); }
+}
+
+// ════════════════════════════════
+//  照片管理
+// ════════════════════════════════
+function populatePhotoSelects() {
+    const opts = '<option value="">— 选择地点 —</option>'
+        + allLocations.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+    document.getElementById('photo-loc-select').innerHTML    = opts;
+    document.getElementById('photo-manage-select').innerHTML = opts;
+}
+
+async function uploadPhotos() {
+    const locationId = document.getElementById('photo-loc-select').value;
+    const files      = document.getElementById('photo-file-input').files;
+    if (!locationId) return alert('请选择地点');
+    if (!files.length) return alert('请选择图片文件');
+
+    const progress = document.getElementById('upload-progress');
+    progress.style.display = 'block';
+    let ok = 0;
+    for (const file of files) {
+        const fd = new FormData();
+        fd.append('image', file);
+        try {
+            const res = await fetch(`${API_BASE}/api/admin/locations/${locationId}/photo`, {
+                method: 'POST', headers: { 'x-admin-token': adminToken }, body: fd
+            });
+            if (res.ok) ok++;
+        } catch (_) {}
+    }
+    progress.style.display = 'none';
+    alert(`上传完成：${ok}/${files.length} 张成功`);
+    document.getElementById('photo-file-input').value = '';
+}
+
+async function loadLocationPhotos() {
+    const locationId = document.getElementById('photo-manage-select').value;
+    const grid = document.getElementById('photo-manage-grid');
+    if (!locationId) { grid.innerHTML = ''; return; }
+    try {
+        const res  = await fetch(`${API_BASE}/api/locations/${locationId}`);
+        const data = await res.json();
+        const photos = data.photos || [];
+        if (!photos.length) { grid.innerHTML = '<p style="font-size:12px;color:#999;grid-column:span 2">该地点暂无照片</p>'; return; }
+        grid.innerHTML = photos.map(p => `
+            <div class="photo-manage-item">
+                <img src="${API_BASE}${p.url}" alt="照片">
+                <button class="photo-del-btn" onclick="deletePhoto(${p.id}, this)">✕</button>
+            </div>`).join('');
+    } catch (_) { grid.innerHTML = '<p style="font-size:12px;color:#e74c3c">加载失败</p>'; }
+}
+
+async function deletePhoto(photoId, btn) {
+    if (!confirm('确认删除这张照片？')) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/photos/${photoId}`, {
+            method: 'DELETE', headers: { 'x-admin-token': adminToken }
+        });
+        if (res.ok) btn.closest('.photo-manage-item').remove();
+        else alert('删除失败');
+    } catch (_) { alert('删除失败'); }
+}
+
+// ════════════════════════════════
+//  路网（边）管理
+// ════════════════════════════════
+async function loadEdges() {
+    const container = document.getElementById('edge-list');
+    container.innerHTML = '<p style="font-size:12px;color:#999">加载中...</p>';
+    try {
+        const res   = await fetch(`${API_BASE}/api/admin/edges`, { headers: { 'x-admin-token': adminToken } });
+        const edges = await res.json();
+        if (!edges.length) { container.innerHTML = '<p style="font-size:12px;color:#999">暂无边数据</p>'; return; }
+        container.innerHTML = edges.map(e => `
+            <div class="edge-card" id="edge-${e.id}">
+                <div class="edge-title">
+                    ${escHtml(e.source_name)} (${e.source_node})
+                    → ${escHtml(e.target_name)} (${e.target_node})
+                </div>
+                <div class="edge-costs">
+                    🌅 早:${e.cost_morning} &nbsp; ☀️ 平:${e.cost_noon} &nbsp; 🌆 晚:${e.cost_evening}
+                </div>
+                <div class="actions">
+                    <button class="btn-sm btn-sm-blue" onclick="openEdgeEdit(${e.id},${e.cost_morning},${e.cost_noon},${e.cost_evening})">✏️ 编辑</button>
+                    <button class="btn-sm btn-sm-red"  onclick="deleteEdge(${e.id})">🗑 删除</button>
+                </div>
+            </div>`).join('');
+    } catch (_) { container.innerHTML = '<p style="font-size:12px;color:#e74c3c">加载失败</p>'; }
+}
+
+function openEdgeEdit(id, m, n, e) {
+    const nm = prompt(`边 ID ${id} — 早高峰权重（当前 ${m}）：`, m);
+    if (nm === null) return;
+    const nn = prompt(`平峰权重（当前 ${n}）：`, n);
+    if (nn === null) return;
+    const ne = prompt(`晚高峰权重（当前 ${e}）：`, e);
+    if (ne === null) return;
+    updateEdge(id, parseFloat(nm), parseFloat(nn), parseFloat(ne));
+}
+
+async function updateEdge(id, cost_morning, cost_noon, cost_evening) {
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify({ cost_morning, cost_noon, cost_evening })
+        });
+        const data = await res.json();
+        alert(data.message || '更新成功');
+        loadEdges();
+    } catch (_) { alert('更新失败'); }
+}
+
+async function createEdge() {
+    const src = parseInt(document.getElementById('new-edge-src').value);
+    const tgt = parseInt(document.getElementById('new-edge-tgt').value);
+    if (isNaN(src) || isNaN(tgt)) return alert('请填写有效的起点和终点 ID');
+    const payload = {
+        source_node:  src,
+        target_node:  tgt,
+        cost_morning: parseFloat(document.getElementById('new-edge-morning').value) || 1,
+        cost_noon:    parseFloat(document.getElementById('new-edge-noon').value)    || 1,
+        cost_evening: parseFloat(document.getElementById('new-edge-evening').value) || 1
+    };
+    try {
+        const res  = await fetch(`${API_BASE}/api/admin/edges`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data.error || '新增失败');
+        alert(data.message);
+        ['new-edge-src','new-edge-tgt'].forEach(id => document.getElementById(id).value = '');
+        ['new-edge-morning','new-edge-noon','new-edge-evening'].forEach(id => document.getElementById(id).value = '1');
+        loadEdges();
+    } catch (_) { alert('新增失败'); }
+}
+
+async function deleteEdge(id) {
+    if (!confirm(`确认删除边 ID ${id}？`)) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/edges/${id}`, {
+            method: 'DELETE', headers: { 'x-admin-token': adminToken }
+        });
+        if (res.ok) { document.getElementById(`edge-${id}`)?.remove(); }
+        else alert('删除失败');
+    } catch (_) { alert('删除失败'); }
+}
+
 </script>
 </body>
 </html>

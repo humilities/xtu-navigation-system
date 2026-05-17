@@ -264,9 +264,123 @@ app.post('/api/admin/locations/:id/photo', adminAuth, upload.single('image'), as
     }
 });
 
+
+// 删除照片
+app.delete('/api/admin/photos/:id', adminAuth, async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT url FROM location_photos WHERE id = $1', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ error: '照片不存在' });
+        await pool.query('DELETE FROM location_photos WHERE id = $1', [req.params.id]);
+        res.json({ message: '照片已删除' });
+    } catch (err) {
+        res.status(500).json({ error: '删除失败' });
+    }
+});
+
+// 新增建筑/地点
+app.post('/api/admin/locations', adminAuth, async (req, res) => {
+    const { name, longitude, latitude, height, description, category } = req.body;
+    if (!name || longitude == null || latitude == null) {
+        return res.status(400).json({ error: '名称、经度、纬度为必填项' });
+    }
+    try {
+        const result = await pool.query(
+            `INSERT INTO locations (name, longitude, latitude, height, description, category)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [name, longitude, latitude, height || 0, description || '', category || '']
+        );
+        res.json({ message: '建筑新增成功', location: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '新增失败' });
+    }
+});
+
+// 删除建筑（级联删除照片、评价、失物招领、边）
+app.delete('/api/admin/locations/:id', adminAuth, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM location_photos  WHERE location_id = $1', [id]);
+        await pool.query('DELETE FROM location_reviews WHERE location_id = $1', [id]);
+        await pool.query('DELETE FROM lost_and_found   WHERE location_id = $1', [id]);
+        await pool.query('DELETE FROM edges WHERE source_node = $1 OR target_node = $1', [id]);
+        await pool.query('DELETE FROM locations WHERE id = $1', [id]);
+        res.json({ message: '建筑及关联数据已删除' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '删除失败' });
+    }
+});
+
+// 获取所有边（含端点名称）
+app.get('/api/admin/edges', adminAuth, async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT e.id, e.source_node, e.target_node,
+                   l1.name AS source_name, l2.name AS target_name,
+                   e.cost_morning, e.cost_noon, e.cost_evening
+            FROM edges e
+            JOIN locations l1 ON e.source_node = l1.id
+            JOIN locations l2 ON e.target_node = l2.id
+            ORDER BY e.id ASC
+        `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: '获取边列表失败' });
+    }
+});
+
+// 新增边
+app.post('/api/admin/edges', adminAuth, async (req, res) => {
+    const { source_node, target_node, cost_morning, cost_noon, cost_evening } = req.body;
+    if (!source_node || !target_node) {
+        return res.status(400).json({ error: '起点ID和终点ID为必填项' });
+    }
+    try {
+        const result = await pool.query(
+            `INSERT INTO edges (source_node, target_node, cost_morning, cost_noon, cost_evening)
+             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            [source_node, target_node,
+             cost_morning ?? 1, cost_noon ?? 1, cost_evening ?? 1]
+        );
+        res.json({ message: '边新增成功', edge: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '新增失败，请确认节点ID存在' });
+    }
+});
+
+// 更新边权重（三个时段）
+app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
+    const { id } = req.params;
+    const { cost_morning, cost_noon, cost_evening } = req.body;
+    try {
+        await pool.query(
+            `UPDATE edges SET
+                cost_morning = COALESCE($1, cost_morning),
+                cost_noon    = COALESCE($2, cost_noon),
+                cost_evening = COALESCE($3, cost_evening)
+             WHERE id = $4`,
+            [cost_morning, cost_noon, cost_evening, id]
+        );
+        res.json({ message: '边权重更新成功' });
+    } catch (err) {
+        res.status(500).json({ error: '更新失败' });
+    }
+});
+
+// 删除边
+app.delete('/api/admin/edges/:id', adminAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM edges WHERE id = $1', [req.params.id]);
+        res.json({ message: '边已删除' });
+    } catch (err) {
+        res.status(500).json({ error: '删除失败' });
+    }
+});
+
 // --- 启动服务器 ---
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`🚀 湘大导航系统后端运行在 http://localhost:${PORT}`);
 });
-
