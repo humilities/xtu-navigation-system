@@ -369,15 +369,6 @@ app.put('/api/admin/edges/:id', adminAuth, async (req, res) => {
     }
 });
 
-// 删除边
-app.delete('/api/admin/edges/:id', adminAuth, async (req, res) => {
-    try {
-        await pool.query('DELETE FROM edges WHERE id = $1', [req.params.id]);
-        res.json({ message: '边已删除' });
-    } catch (err) {
-        res.status(500).json({ error: '删除失败' });
-    }
-});
 
 // --- 启动服务器 ---
 const PORT = 3000;
