@@ -271,6 +271,7 @@ app.delete('/api/admin/photos/:id', adminAuth, async (req, res) => {
     }
 });
 
+
 // 新增建筑/地点
 app.post('/api/admin/locations', adminAuth, async (req, res) => {
     const { name, longitude, latitude, height, description, category } = req.body;
