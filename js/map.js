@@ -70,18 +70,7 @@ async function initMap() {
     if (layer instanceof L.Marker && layer.options && layer.options.title) {
       layer.on('click', function() {
         // 填充面板信息
-        // 1. 生成分类标签
-        let tag = "";
-        if (this.options.category === "canteen") {
-            tag = '<span class="site-tag canteen-tag">食堂</span>';
-        } else if (this.options.category === "teaching") {
-            tag = '<span class="site-tag teaching-tag">教学楼</span>';
-        } else {
-            tag = '<span class="site-tag other-tag">其他</span>';
-        }
-
-        // 2. 把标签拼到标题里
-        panelTitle.innerHTML = this.options.title + tag;
+        panelTitle.innerText = this.options.title;
         panelDesc.innerText = this.options.desc || "暂无景点介绍";
         panelImg.src = this.options.img || "";
 
