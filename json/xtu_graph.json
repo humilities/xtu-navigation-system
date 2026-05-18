@@ -7,7 +7,7 @@
       "y": 112.8574646760874,
       "desc": "校大门，全天人流较大",
       "height": 30,
-      "category": "landmark"
+      "category": "other"
     },
     {
       "id": 2,
@@ -16,7 +16,7 @@
       "y": 112.85565012594184,
       "desc": "休闲区，人流中等",
       "height": 0,
-      "category": "landmark"
+      "category": "other"
     },
     {
       "id": 3,
@@ -34,7 +34,7 @@
       "y": 112.86141341892535,
       "desc": "网红打卡点，傍晚人流高",
       "height": 40,
-      "category": "dormitory"
+      "category": "other"
     },
     {
       "id": 5,
@@ -43,7 +43,7 @@
       "y": 112.85755951101042,
       "desc": "游客多，人流稳定",
       "height": 24,
-      "category": "landmark"
+      "category": "other"
     },
     {
       "id": 6,
@@ -69,7 +69,7 @@
       "y": 112.85956232930344,
       "desc": "人文景观，人流少",
       "height": 200,
-      "category": "landmark"
+      "category": "other"
     },
     {
       "id": 9,
@@ -78,7 +78,7 @@
       "y": 112.8647211036778,
       "desc": "赛事时段人流高",
       "height": 50,
-      "category": "sports"
+      "category": "other"
     },
     {
       "id": 10,
@@ -87,7 +87,7 @@
       "y": 112.85525323541432,
       "desc": "早晚通勤人流高",
       "height": 40,
-      "category": "landmark"
+      "category": "other"
     },
     {
       "id": 11,
@@ -114,7 +114,7 @@
       "y": 112.85816642565233,
       "desc": "文化区，人流多",
       "height": 0,
-      "category": "landmark"
+      "category": "other"
     },
     {
       "id": 14,
@@ -123,7 +123,7 @@
       "y": 112.85956232929182,
       "desc": "宿舍区，人流多",
       "height": 40,
-      "category": "dormitory"
+      "category": "other"
     },
     {
       "id": 15,
@@ -132,7 +132,7 @@
       "y": 112.85059516559997,
       "desc": "宿舍区，人流多",
       "height": 40,
-      "category": "landmark"
+      "category": "other"
     }
   ],
   "edges": [
