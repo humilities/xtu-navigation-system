@@ -190,21 +190,3 @@ button:hover {
 .filter-btn:hover {
   background: #ddd;
 }
-/* 侧边栏分类小标签 */
-.site-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    font-size: 12px;
-    border-radius: 12px;
-    color: #fff;
-    margin-left: 6px;
-}
-.canteen-tag {
-    background: #ff6b6b;
-}
-.teaching-tag {
-    background: #409eff;
-}
-.other-tag {
-    background: #67c23a;
-}
