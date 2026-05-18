@@ -72,9 +72,9 @@ async function initMap() {
         // 填充面板信息
         // 1. 生成分类标签
         let tag = "";
-        if (this.options.type === "canteen") {
+        if (this.options.category === "canteen") {
             tag = '<span class="site-tag canteen-tag">食堂</span>';
-        } else if (this.options.type === "teaching") {
+        } else if (this.options.category === "teaching") {
             tag = '<span class="site-tag teaching-tag">教学楼</span>';
         } else {
             tag = '<span class="site-tag other-tag">其他</span>';
