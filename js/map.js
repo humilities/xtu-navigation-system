@@ -70,10 +70,21 @@ async function initMap() {
     if (layer instanceof L.Marker && layer.options && layer.options.title) {
       layer.on('click', function() {
         // 填充面板信息
-        panelTitle.innerText = this.options.title;
+        // 1. 生成分类标签
+        let tag = "";
+        if (this.options.type === "canteen") {
+            tag = '<span class="site-tag canteen-tag">食堂</span>';
+        } else if (this.options.type === "teaching") {
+            tag = '<span class="site-tag teaching-tag">教学楼</span>';
+        } else {
+            tag = '<span class="site-tag other-tag">其他</span>';
+        }
+
+        // 2. 把标签拼到标题里
+        panelTitle.innerHTML = this.options.title + tag;
         panelDesc.innerText = this.options.desc || "暂无景点介绍";
         panelImg.src = this.options.img || "";
-        
+
         panelFlow.innerHTML = "";
         let flowList = this.options.flow || ["人流正常"];
         flowList.forEach(item=>{
